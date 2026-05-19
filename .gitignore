@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+*.dylib
+
+# 가상환경
+venv/
+.venv/
+env/
+.env
+*.env
+
+# 데이터 / 크롤링 결과
+data/crawled/*.json
+data/distilled/*.json
+data/questions/*.json
+data/testset.json
+
+# 벡터 DB
+chroma_db/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/__pycache__/
+
+# OMC
+.omc/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 로그
+*.log
+logs/

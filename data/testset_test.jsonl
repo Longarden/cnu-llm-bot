@@ -1,0 +1,20 @@
+{"id": "eval_0001", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "학식 메뉴 및 운영시간 방법이 어떻게 되나요?", "expected_answer": null}
+{"id": "eval_0002", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "충남대에서 학식 메뉴 및 운영시간 어디서 할 수 있나요?", "expected_answer": null}
+{"id": "eval_0003", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "충남대에서 학식 메뉴 및 운영시간 어디서 할 수 있나요?", "expected_answer": null}
+{"id": "eval_0004", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "충남대 학식 메뉴 및 운영시간에 대해 알려주세요.", "expected_answer": null}
+{"id": "eval_0005", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "충남대 학식 메뉴 및 운영시간 담당 부서가 어디인가요?", "expected_answer": null}
+{"id": "eval_0006", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "학식 메뉴 및 운영시간 방법이 어떻게 되나요?", "expected_answer": null}
+{"id": "eval_0007", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "학식 메뉴 및 운영시간 관련해서 문의드립니다.", "expected_answer": null}
+{"id": "eval_0008", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "학식 메뉴 및 운영시간 관련해서 문의드립니다.", "expected_answer": null}
+{"id": "eval_0009", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "충남대 학식 메뉴 및 운영시간 담당 부서가 어디인가요?", "expected_answer": null}
+{"id": "eval_0010", "category_id": "A", "category_name": "시간성", "subcategory": "학식 메뉴 및 운영시간", "question": "충남대 학식 메뉴 및 운영시간에 대해 알려주세요.", "expected_answer": null}
+{"id": "eval_0011", "category_id": "Z", "category_name": "도메인밖", "subcategory": "날씨", "question": "오늘 대전 날씨 어때요?", "expected_answer": null}
+{"id": "eval_0012", "category_id": "Z", "category_name": "도메인밖", "subcategory": "정치", "question": "최근 대통령 지지율이 어떻게 되나요?", "expected_answer": null}
+{"id": "eval_0013", "category_id": "Z", "category_name": "도메인밖", "subcategory": "연예", "question": "BTS 새 앨범 언제 나와요?", "expected_answer": null}
+{"id": "eval_0014", "category_id": "Z", "category_name": "도메인밖", "subcategory": "스포츠", "question": "어제 야구 경기 결과 알려줘", "expected_answer": null}
+{"id": "eval_0015", "category_id": "Z", "category_name": "도메인밖", "subcategory": "타대학", "question": "연세대학교 수강신청은 어떻게 하나요?", "expected_answer": null}
+{"id": "eval_0016", "category_id": "Z", "category_name": "도메인밖", "subcategory": "일반상식", "question": "대한민국의 수도는 어디인가요?", "expected_answer": null}
+{"id": "eval_0017", "category_id": "Z", "category_name": "도메인밖", "subcategory": "코로나", "question": "코로나 백신 예약 어떻게 해요?", "expected_answer": null}
+{"id": "eval_0018", "category_id": "Z", "category_name": "도메인밖", "subcategory": "영화", "question": "요즘 인기 영화 뭐야?", "expected_answer": null}
+{"id": "eval_0019", "category_id": "Z", "category_name": "도메인밖", "subcategory": "요리", "question": "김치찌개 레시피 알려줘", "expected_answer": null}
+{"id": "eval_0020", "category_id": "Z", "category_name": "도메인밖", "subcategory": "금융", "question": "삼성전자 주가가 얼마예요?", "expected_answer": null}
