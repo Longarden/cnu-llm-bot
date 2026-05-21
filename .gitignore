@@ -20,7 +20,7 @@ env/
 *.env
 
 # 데이터 / 크롤링 결과
-data/crawled/*.json
+# data/crawled/*.json 는 깃 캐시로 커밋 (콜랩에서 git clone 후 로드). 의도적으로 추적함.
 data/distilled/*.json
 data/questions/*.json
 data/testset.json

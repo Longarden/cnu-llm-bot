@@ -1,0 +1,31 @@
+CNU LLM Bot - Ralph Progress
+=============================
+Scope: 학과=컴퓨터인공지능학부만, PDF/HWP 제외. 추론=Colab T4 15GB.
+환경: 로컬 miniconda Python 3.13.11 (torch CPU만, chromadb/sentence-transformers 미설치 -> dense는 Colab)
+
+[Phase A] 로컬 벡터DB + 검색 검증 - 완료
+- embedding/data_loader.py 신규: load_scoped_docs() - all_dedup.json(257건) 우선 로드,
+  폴백은 개별 카테고리 파일(학과 denylist 제외). 컴공 department_general만, 다른 학과 제외.
+- 검증: 257건 로드, 14 카테고리 (F_department 20=컴공, 인문/사회 학과 없음 -> 스코프 정확).
+- BM25 sparse 검색 실데이터 동작 확인 (rank_bm25 설치됨). 샘플 5질문 관련 청크 반환.
+  예: "컴퓨터인공지능학부 교수" -> F_department sparse=6.79 강한 매칭.
+- dense(bge-m3)는 chromadb 미설치로 graceful skip -> Colab에서 동작 (설계대로).
+- 전 모듈 py_compile 통과 (exit 0).
+- 알려진 약점: BM25 한국어 토크나이저가 공백분할이라 일부 매칭 거침. dense가 Colab서 보완. (open item)
+
+[Phase B] 콜랩 노트북 정비 - 완료
+- notebooks/main.ipynb 셀 5 패치: run_all_crawlers() 재크롤 -> load_scoped_docs() 깃 캐시 로드.
+  콜랩서 재크롤 느림/실패위험 제거. 셀 4 마크다운도 갱신.
+- notebook JSON 유효 (nbformat=4, 22셀, 전 셀 well-formed).
+- 크로스모듈 호출 일관성 확인: answer_questions가 extract_dates, check_rejection,
+  build_user_prompt, hybrid retrieve, generate 정확히 호출 (실제 함수명과 일치).
+- 단위검증: rejector(empty->no_results, weather->out_of_domain), date_extractor 4패턴 정확
+  (오늘 2026-05-21, 5월19일, 내일 2026-05-22, 이번주).
+
+[Phase C] 메타라우팅, CRAG - 사용자 확인 대기
+- Phase A/B 완료. Phase C는 사용자 진행 여부 확인 후.
+
+남은 GPU 검증 (Colab에서 사용자):
+- bge-m3 임베딩 + Chroma 벡터DB 빌드
+- Qwen/EXAONE 7B 로드 + 답변생성
+- end-to-end answer_questions
