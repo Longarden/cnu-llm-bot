@@ -93,7 +93,32 @@ def retrieve(question: str, n_results: int = 10, date_filter: dict | None = None
     fused = _reciprocal_rank_fusion(sparse_results, dense_results)
     if date_filter:
         fused = _apply_date_filter(fused, date_filter)
+    fused = _apply_hall_filter(fused, question)
     return fused[:n_results]
+
+
+def _apply_hall_filter(docs: list[dict], question: str) -> list[dict]:
+    """질문이 특정 학생회관(제N학생회관)을 지목하면 다른 관 메뉴 청크를 제거.
+
+    검색은 1등으로 맞는 관을 줘도 비슷한 다른 관 청크가 같이 딸려와
+    LLM이 답 쓸 때 섞는 것을 방지(컨텍스트에서 경쟁 관 제거).
+    질문에 학생회관 지목이 없으면 그대로 통과.
+    """
+    import re
+    m = re.search(r"제?\s*([1-4])\s*학(?:생회관|관)", question)
+    if not m:
+        return docs
+    n = m.group(1)
+    target = f"제{n}학생회관"
+    others = [f"제{k}학생회관" for k in "1234" if k != n]
+    out = []
+    for d in docs:
+        txt = (d.get("original_text", "") or d.get("text", ""))
+        # 다른 관을 언급하는데 지목한 관은 없으면 = 경쟁 관 메뉴 -> 제외
+        if any(o in txt for o in others) and target not in txt:
+            continue
+        out.append(d)
+    return out
 
 
 def _apply_date_filter(docs: list[dict], date_filter: dict) -> list[dict]:
