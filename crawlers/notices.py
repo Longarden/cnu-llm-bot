@@ -24,7 +24,8 @@ class NoticesCrawler(BaseCrawler):
     # 본문 아닌 네비게이션/버튼 제목 제외
     _SKIP_TITLES = {"다음글", "이전글", "목록", "처음", "이전", "다음", "마지막", "검색", "더보기", "글쓰기"}
 
-    def crawl(self) -> list[dict]:
+    def crawl(self) -> list[dict]:  # 목록→각 글 링크 들어가서 trafilatura로 본문까지 가져옴
+        from urllib.parse import urljoin
         from crawler_pipeline.body_extractor import fetch_html, fetch_body
         now = datetime.utcnow().isoformat()
         valid = (datetime.utcnow() + timedelta(days=1)).isoformat()
@@ -32,6 +33,7 @@ class NoticesCrawler(BaseCrawler):
         seen_links = set()
         for url, base in self.NOTICE_SOURCES:
             try:
+                # fetch_html: 인코딩 자동보정해서 목록 HTML 가져옴
                 html = fetch_html(url, timeout=10)
                 soup = BeautifulSoup(html, "html.parser")
             except Exception as e:
@@ -44,8 +46,7 @@ class NoticesCrawler(BaseCrawler):
                 title = title_tag.get_text(strip=True)
                 if not title or len(title) < 3 or title in self._SKIP_TITLES:
                     continue
-                # 상대링크('?mode=view&...', '/path' 등)를 목록 URL 기준으로 정확히 합침
-                from urllib.parse import urljoin
+                # 상대링크('?mode=view&...', '/path')를 목록 URL 기준으로 정확히 합침
                 href = title_tag.get("href", "")
                 link = urljoin(url, href) if href else ""
                 if link in seen_links:
@@ -53,7 +54,7 @@ class NoticesCrawler(BaseCrawler):
                 seen_links.add(link)
                 date_tag = row.select_one("td.date, .date, td:last-child")
                 date_str = date_tag.get_text(strip=True) if date_tag else now[:10]
-                # 상세페이지 본문 추출(SOTA trafilatura). 실패시 제목만.
+                # 상세페이지 본문 추출(trafilatura). 실패 시 제목만.
                 body = fetch_body(link, timeout=10)
                 content = f"{title}\n\n{body}" if body else title
                 items.append(self._make_doc(
@@ -66,7 +67,7 @@ class NoticesCrawler(BaseCrawler):
                 ))
         return items if items else self._fallback()
 
-    def _fallback(self) -> list[dict]:
+    def _fallback(self) -> list[dict]: # 크롤링 실패 시, 최근 공지사항 7개를 하드코딩하여 반환하는 함수입니다.
         now = datetime.utcnow().isoformat()
         valid = (datetime.utcnow() + timedelta(days=1)).isoformat()
         notices = [
