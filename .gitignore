@@ -24,6 +24,12 @@ env/
 data/distilled/*.json
 data/questions/*.json
 data/testset.json
+# 로컬 백업/스테이징 (커밋 제외)
+data/crawled/*.bak*
+data/crawled/*backup*
+data/crawled_staging/
+data/sample_e2e_*.jsonl
+data/sample_answers.jsonl
 
 # 벡터 DB
 chroma_db/

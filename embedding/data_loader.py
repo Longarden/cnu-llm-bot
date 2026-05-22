@@ -34,6 +34,15 @@ CATEGORY_FILES = [
 ]
 
 
+def _repair(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """인코딩 깨짐 자동 복구(빌드 시점 안전망). 정상 텍스트는 그대로."""
+    from crawler_pipeline.text_repair import clean_docs
+    docs, fixed = clean_docs(docs)
+    if fixed:
+        print(f"[data_loader] 인코딩 복구: {fixed}건")
+    return docs
+
+
 def load_scoped_docs(prefer_dedup: bool = True) -> list[dict[str, Any]]:
     """스코프 적용된 문서 목록 반환.
 
@@ -43,6 +52,7 @@ def load_scoped_docs(prefer_dedup: bool = True) -> list[dict[str, Any]]:
     if prefer_dedup and os.path.exists(dedup_path):
         with open(dedup_path, encoding="utf-8") as f:
             docs = json.load(f)
+        docs = _repair(docs)
         print(f"[data_loader] all_dedup.json 로드: {len(docs)}건 (스코프 통합본)")
         return docs
 
@@ -59,6 +69,7 @@ def load_scoped_docs(prefer_dedup: bool = True) -> list[dict[str, Any]]:
             cat_docs = json.load(f)
         docs.extend(cat_docs)
         print(f"[data_loader] {fname}: {len(cat_docs)}건")
+    docs = _repair(docs)
     print(f"[data_loader] 개별 로드 합계: {len(docs)}건")
     return docs
 

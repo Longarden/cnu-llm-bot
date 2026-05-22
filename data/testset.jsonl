@@ -1,0 +1,200 @@
+{"id": "q001", "category": "time_sensitive", "question": "오늘 1학생회관 점심 메뉴 뭐야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q002", "category": "time_sensitive", "question": "2학생회관 오늘 저녁 메뉴 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q003", "category": "time_sensitive", "question": "오늘 학식 조식 뭐 나와?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q004", "category": "time_sensitive", "question": "기숙사 식당 오늘 메뉴 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q005", "category": "time_sensitive", "question": "이번주 학식 식단표 보여줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q006", "category": "time_sensitive", "question": "제3학생회관 중식 메뉴는?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q007", "category": "time_sensitive", "question": "오늘 점심 학식 가격 얼마야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q008", "category": "time_sensitive", "question": "학식 운영 시간 언제야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q009", "category": "time_sensitive", "question": "주말에도 학식 하나?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q010", "category": "time_sensitive", "question": "생협 식당 어디 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q011", "category": "time_sensitive", "question": "오늘 도서관 몇 시까지 해?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q012", "category": "time_sensitive", "question": "중앙도서관 운영시간 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q013", "category": "time_sensitive", "question": "도서관 주말 운영시간은?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q014", "category": "time_sensitive", "question": "시험기간 도서관 24시간 하나?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q015", "category": "time_sensitive", "question": "열람실 지금 자리 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q016", "category": "time_sensitive", "question": "노트북 가능한 열람실 어디야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q017", "category": "time_sensitive", "question": "도서관 휴관일 언제야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q018", "category": "time_sensitive", "question": "도서관 자료실 위치 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q019", "category": "time_sensitive", "question": "도서관에서 책 몇 권까지 빌려?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q020", "category": "time_sensitive", "question": "도서관 대출 기간 며칠이야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q021", "category": "time_sensitive", "question": "셔틀버스 시간표 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q022", "category": "time_sensitive", "question": "교내 순환 셔틀 언제 와?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q023", "category": "time_sensitive", "question": "셔틀버스 막차 몇 시야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q024", "category": "time_sensitive", "question": "셔틀 노선 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q025", "category": "time_sensitive", "question": "캠퍼스 순환버스 배차 간격은?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q026", "category": "time_sensitive", "question": "셔틀버스 주말에도 운행해?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q027", "category": "time_sensitive", "question": "공대에서 정문 셔틀 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q028", "category": "time_sensitive", "question": "셔틀 첫차 시간은?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q029", "category": "time_sensitive", "question": "도서관 그룹스터디룸 예약 어떻게 해?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q030", "category": "time_sensitive", "question": "오늘 도서관 행사 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q031", "category": "time_sensitive", "question": "학식 채식 메뉴 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q032", "category": "time_sensitive", "question": "기숙사 식당 운영 시간은?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q033", "category": "time_sensitive", "question": "오늘 분식 코너 메뉴는?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q034", "category": "time_sensitive", "question": "도서관 디지털자료실 어디야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q035", "category": "time_sensitive", "question": "셔틀 타는 곳 어디야?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q036", "category": "time_sensitive", "question": "학식 카드 결제 돼?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q037", "category": "time_sensitive", "question": "도서관 노트북 대여 돼?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q038", "category": "time_sensitive", "question": "이번주 금요일 학식 메뉴는?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q039", "category": "time_sensitive", "question": "도서관 좌석 예약 사이트 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q040", "category": "time_sensitive", "question": "셔틀버스 운행 안 하는 날 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q041", "category": "time_sensitive", "question": "학생회관 카페 영업시간은?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q042", "category": "time_sensitive", "question": "오늘 중도 혼잡도 어때?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q043", "category": "time_sensitive", "question": "도서관 반납 연체하면 어떻게 돼?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q044", "category": "time_sensitive", "question": "학식 알레르기 정보 어디서 봐?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q045", "category": "time_sensitive", "question": "셔틀 정류장 위치 다 알려줘", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q046", "category": "time_sensitive", "question": "도서관 프린터 어디 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q047", "category": "time_sensitive", "question": "이번주 학식 특별 메뉴 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q048", "category": "time_sensitive", "question": "기숙사 식당 외부인도 먹어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q049", "category": "time_sensitive", "question": "도서관 사물함 신청 어떻게?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q050", "category": "time_sensitive", "question": "셔틀 실시간 위치 볼 수 있어?", "eval_hint": "해당 카테고리(학식/도서관/셔틀) 정보를 출처와 함께 정확히 답하거나, 자료 없으면 거절"}
+{"id": "q051", "category": "academic", "question": "수강신청 언제부터야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q052", "category": "academic", "question": "수강신청 정정 기간 언제야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q053", "category": "academic", "question": "졸업 학점 몇 학점 필요해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q054", "category": "academic", "question": "전공 몇 학점 들어야 졸업해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q055", "category": "academic", "question": "교양 필수 학점은?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q056", "category": "academic", "question": "졸업 평점 기준 얼마야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q057", "category": "academic", "question": "이번 학기 개강일 언제야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q058", "category": "academic", "question": "종강일 언제야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q059", "category": "academic", "question": "기말고사 기간 언제야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q060", "category": "academic", "question": "중간고사 일정 알려줘", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q061", "category": "academic", "question": "계절학기 신청 어떻게 해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q062", "category": "academic", "question": "휴학 신청 어떻게 해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q063", "category": "academic", "question": "복학 신청 절차 알려줘", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q064", "category": "academic", "question": "일반휴학 최대 몇 학기야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q065", "category": "academic", "question": "군휴학 어떻게 해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q066", "category": "academic", "question": "재수강 규정 알려줘", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q067", "category": "academic", "question": "학점 포기 제도 있어?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q068", "category": "academic", "question": "전과 신청 자격이 뭐야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q069", "category": "academic", "question": "복수전공 어떻게 신청해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q070", "category": "academic", "question": "부전공 신청 방법은?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q071", "category": "academic", "question": "수강 정정 어떻게 해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q072", "category": "academic", "question": "수강 철회 기간 언제야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q073", "category": "academic", "question": "학사 경고 기준은?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q074", "category": "academic", "question": "최대 수강 학점 몇 학점이야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q075", "category": "academic", "question": "조기졸업 요건이 뭐야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q076", "category": "academic", "question": "졸업 유예 신청 가능해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q077", "category": "academic", "question": "교직 이수 어떻게 해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q078", "category": "academic", "question": "계절학기 등록금 얼마야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q079", "category": "academic", "question": "수강편람 어디서 봐?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q080", "category": "academic", "question": "학사일정 어디서 확인해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q081", "category": "academic", "question": "수강신청 정원 초과하면 어떻게?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q082", "category": "academic", "question": "성적 정정 기간 언제야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q083", "category": "academic", "question": "F 받으면 재수강해야 해?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q084", "category": "academic", "question": "전공 선택과 전공 필수 차이가 뭐야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q085", "category": "academic", "question": "교양 영역별 이수 기준은?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q086", "category": "academic", "question": "졸업논문 필수야?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q087", "category": "academic", "question": "학번별 졸업요건 다르게 적용돼?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q088", "category": "academic", "question": "복수전공하면 졸업 학점 늘어?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q089", "category": "academic", "question": "수강신청 사이트 주소 알려줘", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q090", "category": "academic", "question": "학기당 최소 이수 학점 있어?", "eval_hint": "학사 규정/일정을 출처와 함께 정확히. 학번/전공유형 조건 있으면 반영"}
+{"id": "q091", "category": "admin_scholarship", "question": "재학증명서 어떻게 발급해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q092", "category": "admin_scholarship", "question": "성적증명서 발급 방법 알려줘", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q093", "category": "admin_scholarship", "question": "졸업증명서 영문 발급 돼?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q094", "category": "admin_scholarship", "question": "증명서 발급 비용 얼마야?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q095", "category": "admin_scholarship", "question": "등록금 납부 기간 언제야?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q096", "category": "admin_scholarship", "question": "등록금 분할 납부 돼?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q097", "category": "admin_scholarship", "question": "등록금 환불 어떻게 받아?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q098", "category": "admin_scholarship", "question": "학적 변경 어디서 해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q099", "category": "admin_scholarship", "question": "주소 변경 어떻게 해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q100", "category": "admin_scholarship", "question": "휴대폰 번호 변경 어디서?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q101", "category": "admin_scholarship", "question": "재학증명서 인터넷 발급 돼?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q102", "category": "admin_scholarship", "question": "증명서 우편 발급 돼?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q103", "category": "admin_scholarship", "question": "국가장학금 신청 어떻게 해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q104", "category": "admin_scholarship", "question": "국가장학금 신청 기간 언제야?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q105", "category": "admin_scholarship", "question": "교내 장학금 종류 알려줘", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q106", "category": "admin_scholarship", "question": "성적우수 장학금 기준이 뭐야?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q107", "category": "admin_scholarship", "question": "근로장학생 어떻게 신청해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q108", "category": "admin_scholarship", "question": "근로장학 시급 얼마야?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q109", "category": "admin_scholarship", "question": "학자금 대출 어떻게 받아?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q110", "category": "admin_scholarship", "question": "장학금 신청 사이트 알려줘", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q111", "category": "admin_scholarship", "question": "소득분위 어떻게 확인해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q112", "category": "admin_scholarship", "question": "장학금 중복 수혜 돼?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q113", "category": "admin_scholarship", "question": "국가장학금 1유형 2유형 차이가 뭐야?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q114", "category": "admin_scholarship", "question": "교외 장학금 정보 어디서 봐?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q115", "category": "admin_scholarship", "question": "등록금 고지서 어디서 출력해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q116", "category": "admin_scholarship", "question": "분할납부 신청 기간 언제야?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q117", "category": "admin_scholarship", "question": "장학금 언제 지급돼?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q118", "category": "admin_scholarship", "question": "복학생도 장학금 받아?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q119", "category": "admin_scholarship", "question": "재학증명서 발급 며칠 걸려?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q120", "category": "admin_scholarship", "question": "근로장학 어디서 일해?", "eval_hint": "행정/장학 절차를 출처와 함께 정확히"}
+{"id": "q121", "category": "career", "question": "취업박람회 언제 열려?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q122", "category": "career", "question": "채용 공지 어디서 봐?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q123", "category": "career", "question": "현장실습 어떻게 신청해?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q124", "category": "career", "question": "백마인턴십이 뭐야?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q125", "category": "career", "question": "인턴십 학점 인정 돼?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q126", "category": "career", "question": "진로상담 어디서 받아?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q127", "category": "career", "question": "이력서 클리닉 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q128", "category": "career", "question": "취업지원 프로그램 뭐 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q129", "category": "career", "question": "자기소개서 첨삭 받을 수 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q130", "category": "career", "question": "모의면접 프로그램 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q131", "category": "career", "question": "취업동아리 어떻게 가입해?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q132", "category": "career", "question": "기업 채용설명회 일정 알려줘", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q133", "category": "career", "question": "취업지원본부 어디 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q134", "category": "career", "question": "공기업 취업 프로그램 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q135", "category": "career", "question": "직무 적성검사 받을 수 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q136", "category": "career", "question": "취업 특강 일정 알려줘", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q137", "category": "career", "question": "해외취업 지원 프로그램 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q138", "category": "career", "question": "취업률 통계 어디서 봐?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q139", "category": "career", "question": "현장실습 학점 몇 학점이야?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q140", "category": "career", "question": "인턴 지원 자격이 뭐야?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q141", "category": "career", "question": "취업 멘토링 신청 어떻게?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q142", "category": "career", "question": "채용 정보 메일 받을 수 있어?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q143", "category": "career", "question": "취업캠프 언제 해?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q144", "category": "career", "question": "직무 박람회 참가 방법은?", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q145", "category": "career", "question": "졸업생 취업 현황 알려줘", "eval_hint": "취업/진로 정보를 출처와 함께 정확히"}
+{"id": "q146", "category": "department", "question": "컴퓨터인공지능학부 어디 있어?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q147", "category": "department", "question": "컴공 교수님 누구누구 계셔?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q148", "category": "department", "question": "컴퓨터인공지능학부 전화번호는?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q149", "category": "department", "question": "컴공 졸업요건 알려줘", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q150", "category": "department", "question": "컴퓨터인공지능학부 교과과정 알려줘", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q151", "category": "department", "question": "컴공 전공필수 과목 뭐야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q152", "category": "department", "question": "컴퓨터인공지능학부 사무실 위치는?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q153", "category": "department", "question": "컴공 학과 홈페이지 주소 알려줘", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q154", "category": "department", "question": "컴공 대학원 정보 알려줘", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q155", "category": "department", "question": "컴퓨터인공지능학부 연혁 알려줘", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q156", "category": "department", "question": "컴공 교육 목표가 뭐야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q157", "category": "department", "question": "컴퓨터인공지능학부 연구실 뭐 있어?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q158", "category": "department", "question": "컴공 졸업하려면 전공 몇 학점이야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q159", "category": "department", "question": "AI연구센터 뭐 하는 곳이야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q160", "category": "department", "question": "컴공 신입생 안내 어디서 봐?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q161", "category": "department", "question": "컴퓨터인공지능학부 공지사항 어디서 봐?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q162", "category": "department", "question": "컴공 교수님 연구실 위치 알려줘", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q163", "category": "department", "question": "컴공 학부 행사 뭐 있어?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q164", "category": "department", "question": "반도체설계교육센터가 뭐야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q165", "category": "department", "question": "컴퓨터인공지능학부 학과장 누구야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q166", "category": "department", "question": "컴공 비교과 졸업요건 있어?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q167", "category": "department", "question": "컴공 산학협력 프로그램 있어?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q168", "category": "department", "question": "컴퓨터융합학부랑 인공지능학과 관계가 뭐야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q169", "category": "department", "question": "컴공 입학 정원 몇 명이야?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q170", "category": "department", "question": "컴공 졸업생 진로 어떻게 돼?", "eval_hint": "컴퓨터인공지능학부 정보를 출처와 함께 정확히"}
+{"id": "q171", "category": "life_facility", "question": "기숙사 입사 신청 어떻게 해?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q172", "category": "life_facility", "question": "기숙사 비용 얼마야?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q173", "category": "life_facility", "question": "기숙사 신청 기간 언제야?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q174", "category": "life_facility", "question": "동아리 어떻게 가입해?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q175", "category": "life_facility", "question": "동아리 종류 뭐 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q176", "category": "life_facility", "question": "총학생회 어디 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q177", "category": "life_facility", "question": "보건진료소 어디 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q178", "category": "life_facility", "question": "학생상담센터 어디야?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q179", "category": "life_facility", "question": "캠퍼스맵 어디서 봐?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q180", "category": "life_facility", "question": "공과대학 건물 어디 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q181", "category": "life_facility", "question": "체육시설 이용 어떻게 해?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q182", "category": "life_facility", "question": "주차장 어디 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q183", "category": "life_facility", "question": "기숙사 사생 신청 자격이 뭐야?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q184", "category": "life_facility", "question": "학생증 재발급 어떻게 해?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q185", "category": "life_facility", "question": "보건소 진료 시간은?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q186", "category": "life_facility", "question": "동아리방 어디 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q187", "category": "life_facility", "question": "기숙사 통금 시간 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q188", "category": "life_facility", "question": "교내 편의점 어디 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q189", "category": "life_facility", "question": "스터디룸 예약 어떻게 해?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q190", "category": "life_facility", "question": "학생지원처 어디 있어?", "eval_hint": "학생생활/시설 정보를 출처와 함께 정확히"}
+{"id": "q191", "category": "out_of_domain", "question": "오늘 날씨 어때?", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q192", "category": "out_of_domain", "question": "한국 대통령 누구야?", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q193", "category": "out_of_domain", "question": "코로나 백신 어디서 맞아?", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q194", "category": "out_of_domain", "question": "요즘 인기 영화 추천해줘", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q195", "category": "out_of_domain", "question": "비트코인 시세 알려줘", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q196", "category": "out_of_domain", "question": "삼성전자 주가 얼마야?", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q197", "category": "out_of_domain", "question": "맛있는 김치찌개 레시피 알려줘", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q198", "category": "out_of_domain", "question": "월드컵 언제 해?", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q199", "category": "out_of_domain", "question": "서울대 입학 어떻게 해?", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
+{"id": "q200", "category": "out_of_domain", "question": "아이폰 최신 모델 뭐야?", "eval_hint": "학내 도메인 밖 질문 -> '답변 범위 밖' 거절 기대"}
