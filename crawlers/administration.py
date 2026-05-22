@@ -54,48 +54,10 @@ def _download_attachment(url: str) -> bytes | None:
 
 
 def _fetch_post(ntt_no: str, code: str = BOARD_CODE) -> dict | None:
+    """상세 게시물 -> 본문(trafilatura). 본문 없으면 None('게시물 NNNN' 쓰레기 방지)."""
     url = f"{BASE_URL}/_prog/_board/?code={code}&mode=V&no={ntt_no}"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-        r.raise_for_status()
-        r.encoding = "utf-8"
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        title_tag = soup.select_one(".board_view_title, .view_title, h3.title, .bbs_title")
-        title = title_tag.get_text(strip=True) if title_tag else f"게시물 {ntt_no}"
-
-        date_tag = soup.select_one(".date, .board_date, .reg_date, td.date")
-        date_str = date_tag.get_text(strip=True) if date_tag else ""
-        if not date_str:
-            m = re.search(r"\d{4}-\d{2}-\d{2}", r.text)
-            date_str = m.group(0) if m else ""
-
-        body_tag = soup.select_one(".board_view_content, .view_content, .bbs_content, .content_view")
-        body = body_tag.get_text(separator="\n", strip=True) if body_tag else ""
-
-        attach_texts = []
-        for a in soup.select("a[href*='download.php'], a[href*='atch_no']"):
-            href = a.get("href", "")
-            if not href.startswith("http"):
-                href = BASE_URL + ("/" if not href.startswith("/") else "") + href
-            fname = a.get_text(strip=True).lower()
-            if fname.endswith(".pdf"):
-                data = _download_attachment(href)
-                if data:
-                    t = _extract_pdf_text(data)
-                    if t:
-                        attach_texts.append(t)
-
-        full_text = body
-        if attach_texts:
-            full_text += "\n\n[첨부파일 내용]\n" + "\n".join(attach_texts)
-        if not full_text.strip():
-            full_text = title
-
-        return {"url": url, "title": title, "date": date_str, "text": full_text}
-    except Exception as e:
-        logger.warning("게시물 %s 크롤 실패: %s", ntt_no, e)
-        return None
+    from crawler_pipeline.body_extractor import fetch_post
+    return fetch_post(url, timeout=TIMEOUT)
 
 
 def _fetch_board_nos(code: str = BOARD_CODE, menu_dvs_cd: str = "07010101", pages: int = 3) -> list[str]:

@@ -22,6 +22,10 @@ class BaseCrawler(ABC):
 
     def _make_doc(self, title: str, content: str, source_url: str, now: str, valid: str, date: str = "") -> dict:
         """필수 키 6종 + title/content/date 를 포함한 문서 dict 생성 헬퍼."""
+        # 인코딩 깨짐(모지바케) 자동 복구. 정상 텍스트는 그대로 통과.
+        from crawler_pipeline.text_repair import repair_encoding
+        title = repair_encoding(title)
+        content = repair_encoding(content)
         return {
             "source_url": source_url,
             "data_category": self.category_id,

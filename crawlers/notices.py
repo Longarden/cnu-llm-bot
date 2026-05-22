@@ -21,38 +21,49 @@ class NoticesCrawler(BaseCrawler):
         ("https://computer.cnu.ac.kr/computer/notice/project.do", "https://computer.cnu.ac.kr"),
     ]
 
+    # 본문 아닌 네비게이션/버튼 제목 제외
+    _SKIP_TITLES = {"다음글", "이전글", "목록", "처음", "이전", "다음", "마지막", "검색", "더보기", "글쓰기"}
+
     def crawl(self) -> list[dict]:
+        from crawler_pipeline.body_extractor import fetch_html, fetch_body
         now = datetime.utcnow().isoformat()
         valid = (datetime.utcnow() + timedelta(days=1)).isoformat()
         items = []
+        seen_links = set()
         for url, base in self.NOTICE_SOURCES:
             try:
-                resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-                resp.raise_for_status()
-                soup = BeautifulSoup(resp.text, "html.parser")
-                for row in soup.select("tr, .board-list li")[:10]:
-                    title_tag = row.select_one("td.subject a, .tit a, td a, .title a")
-                    if not title_tag:
-                        continue
-                    title = title_tag.get_text(strip=True)
-                    if not title or len(title) < 3:
-                        continue
-                    link = title_tag.get("href", "")
-                    if link and not link.startswith("http"):
-                        link = base + link
-                    # 날짜 추출 시도
-                    date_tag = row.select_one("td.date, .date, td:last-child")
-                    date_str = date_tag.get_text(strip=True) if date_tag else now[:10]
-                    items.append(self._make_doc(
-                        title=title,
-                        content=title,
-                        source_url=link or url,
-                        now=now,
-                        valid=valid,
-                        date=date_str,
-                    ))
+                html = fetch_html(url, timeout=10)
+                soup = BeautifulSoup(html, "html.parser")
             except Exception as e:
-                print(f"[notices] {url} 실패: {e}")
+                print(f"[notices] {url} 목록 실패: {e}")
+                continue
+            for row in soup.select("tr, .board-list li")[:12]:
+                title_tag = row.select_one("td.subject a, .tit a, td a, .title a")
+                if not title_tag:
+                    continue
+                title = title_tag.get_text(strip=True)
+                if not title or len(title) < 3 or title in self._SKIP_TITLES:
+                    continue
+                # 상대링크('?mode=view&...', '/path' 등)를 목록 URL 기준으로 정확히 합침
+                from urllib.parse import urljoin
+                href = title_tag.get("href", "")
+                link = urljoin(url, href) if href else ""
+                if link in seen_links:
+                    continue
+                seen_links.add(link)
+                date_tag = row.select_one("td.date, .date, td:last-child")
+                date_str = date_tag.get_text(strip=True) if date_tag else now[:10]
+                # 상세페이지 본문 추출(SOTA trafilatura). 실패시 제목만.
+                body = fetch_body(link, timeout=10)
+                content = f"{title}\n\n{body}" if body else title
+                items.append(self._make_doc(
+                    title=title,
+                    content=content,
+                    source_url=link or url,
+                    now=now,
+                    valid=valid,
+                    date=date_str,
+                ))
         return items if items else self._fallback()
 
     def _fallback(self) -> list[dict]:

@@ -123,6 +123,10 @@ def _rag_answer(
         except Exception as e:
             answer = f"생성 오류: {e}"
 
+    # CRAG ambiguous 단서 추가 (부분 매칭일 때 - 거절은 아님)
+    if getattr(rejection, "caveat", ""):
+        answer = answer.rstrip() + f"\n\n※ {rejection.caveat}"
+
     # 출처 강제 추가 (포함 안 돼 있으면)
     if not _SOURCE_PATTERN.search(answer) and sources:
         answer = answer.rstrip() + f"\n\n출처: {sources[0]}"

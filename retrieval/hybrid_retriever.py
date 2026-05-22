@@ -4,6 +4,27 @@ import os
 
 _bm25 = None
 _bm25_docs: list[dict] = []
+_kiwi = None
+
+
+def _tokenize(text: str) -> list[str]:
+    """한국어 형태소 토크나이저 (kiwipiepy). 없으면 공백분할 폴백.
+
+    '졸업학점' 같은 붙임말을 형태소로 분리해 질문 '졸업 학점'과 매칭되게 함.
+    """
+    global _kiwi
+    if _kiwi is None:
+        try:
+            from kiwipiepy import Kiwi
+            _kiwi = Kiwi()
+        except Exception:
+            _kiwi = False  # 폴백 표시
+    if _kiwi is False:
+        return text.split()
+    try:
+        return [t.form for t in _kiwi.tokenize(text)]
+    except Exception:
+        return text.split()
 
 
 def _rrf_score(rank: int, k: int = 60) -> float:
@@ -46,7 +67,7 @@ def build_bm25_index(docs: list[dict[str, Any]]) -> None:
     global _bm25, _bm25_docs
     from rank_bm25 import BM25Okapi
     _bm25_docs = docs
-    tokenized = [d.get("original_text", "").split() for d in docs]
+    tokenized = [_tokenize(d.get("original_text", "")) for d in docs]
     _bm25 = BM25Okapi(tokenized)
 
 
@@ -60,17 +81,43 @@ def init_bm25_from_db() -> None:
 
 
 def retrieve(question: str, n_results: int = 10, date_filter: dict | None = None) -> list[dict]:
-    """하이브리드 검색. sparse + dense + RRF 융합 결과 반환."""
-    sparse_results = _sparse_search(question, n_results)
-    dense_results = _dense_search(question, n_results, date_filter)
+    """하이브리드 검색. sparse + dense + RRF 융합 결과 반환.
+
+    date_filter는 Chroma where로 넘기지 않고(문자열 valid_until 타입 크래시 회피)
+    융합 결과를 후처리로 거른다. ISO 날짜(YYYY-MM-DD)는 사전식 비교=시간순.
+    """
+    # 날짜 필터가 있으면 후처리에서 일부가 빠질 수 있어 넉넉히 검색
+    pull = n_results * 2 if date_filter else n_results
+    sparse_results = _sparse_search(question, pull)
+    dense_results = _dense_search(question, pull)
     fused = _reciprocal_rank_fusion(sparse_results, dense_results)
+    if date_filter:
+        fused = _apply_date_filter(fused, date_filter)
     return fused[:n_results]
+
+
+def _apply_date_filter(docs: list[dict], date_filter: dict) -> list[dict]:
+    """valid_until 후처리 필터. {'valid_until': {'$gte': 'YYYY-MM-DD'}} 형태 지원.
+
+    valid_until 이 없는 문서(상시 유효 정보: 학과 위치 등)는 통과시킨다.
+    """
+    spec = date_filter.get("valid_until", {}) if isinstance(date_filter, dict) else {}
+    min_date = spec.get("$gte") if isinstance(spec, dict) else None
+    if not min_date:
+        return docs
+    min_date = str(min_date)[:10]
+    out = []
+    for d in docs:
+        vu = str(d.get("valid_until", "") or "").strip()[:10]
+        if not vu or vu >= min_date:  # 만료일 없으면 상시 유효로 간주
+            out.append(d)
+    return out
 
 
 def _sparse_search(question: str, n: int) -> list[dict]:
     if _bm25 is None or not _bm25_docs:
         return []
-    scores = _bm25.get_scores(question.split())
+    scores = _bm25.get_scores(_tokenize(question))
     top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:n]
     results = []
     for idx in top_indices:
@@ -83,7 +130,16 @@ def _sparse_search(question: str, n: int) -> list[dict]:
 def _dense_search(question: str, n: int, where: dict | None = None) -> list[dict]:
     try:
         from embedding.vector_store import query
-        return query(question, n_results=n, where=where)
+        raw = query(question, n_results=n, where=where)
+        # sparse 결과와 형태 통일: original_text + 메타데이터 평탄화 (RRF 키 일치, 카테고리 보존)
+        flat = []
+        for r in raw:
+            meta = r.get("metadata", {}) or {}
+            item = dict(meta)
+            item["original_text"] = r.get("text", "") or meta.get("original_text", "")
+            item["score"] = r.get("score", 0.0)
+            flat.append(item)
+        return flat
     except Exception as e:
         print(f"[hybrid_retriever] dense 검색 실패: {e}")
         return []
