@@ -94,7 +94,35 @@ def retrieve(question: str, n_results: int = 10, date_filter: dict | None = None
     if date_filter:
         fused = _apply_date_filter(fused, date_filter)
     fused = _apply_hall_filter(fused, question)
+    fused = _apply_meal_filter(fused, question)
     return fused[:n_results]
+
+
+def _apply_meal_filter(docs: list[dict], question: str) -> list[dict]:
+    """질문이 특정 끼니(조식/중식/석식)를 지목하면 다른 끼니 전용 청크 제거.
+
+    예: "2학생회관 저녁" 질문에 점심(중식) 메뉴를 가져다 답하는 것 방지.
+    저녁 데이터 없는 식당은 결과가 비어 거절됨(=정직). 끼니 지목 없으면 통과.
+    """
+    meals = {"조식": ["조식", "아침"], "중식": ["중식", "점심"], "석식": ["석식", "저녁"]}
+    target = None
+    for m, kws in meals.items():
+        if any(k in question for k in kws):
+            target = m
+            break
+    if not target:
+        return docs
+    other_tokens = [m for m in meals if m != target]  # 다른 끼니 정식 토큰
+    target_tokens = [target] + meals[target]
+    out = []
+    for d in docs:
+        t = d.get("original_text", "") or ""
+        has_other = any(o in t for o in other_tokens)
+        has_target = any(tk in t for tk in target_tokens)
+        if has_other and not has_target:
+            continue  # 다른 끼니 전용 메뉴 청크 -> 제외
+        out.append(d)
+    return out
 
 
 def _apply_hall_filter(docs: list[dict], question: str) -> list[dict]:
