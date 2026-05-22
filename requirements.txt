@@ -4,7 +4,6 @@ chromadb>=0.5.0
 langchain>=0.2.0
 langchain-community>=0.2.0
 langchain-text-splitters>=0.2.0
-crawl4ai>=0.3.0
 gradio>=4.0.0
 anthropic>=0.28.0
 rank_bm25>=0.2.2
@@ -18,7 +17,4 @@ numpy>=1.26.0
 FlagEmbedding>=1.2.0
 kiwipiepy>=0.18.0
 trafilatura>=1.8.0
-pdfplumber>=0.10.0
-PyPDF2>=3.0.0
-pyhwp>=0.1.0
-olefile>=0.46
+# PDF/HWP는 이번 빌드 제외 (pyhwp는 Python2 전용이라 콜랩 설치 깨뜨림). 필요시 별도 추가.
