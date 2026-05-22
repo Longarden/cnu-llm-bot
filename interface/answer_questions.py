@@ -16,6 +16,26 @@ from typing import Optional
 _SOURCE_PATTERN = re.compile(r"출처\s*:")
 
 
+def _clean_answer(answer: str) -> str:
+    """모델이 베껴 쓴 출처/메타/참고자료 토큰 제거 → 본문만 남김.
+
+    작은 LLM이 컨텍스트의 '[참고자료 N]', '출처: ... | 업데이트: ...'를 그대로
+    베껴 써서 출처 누출·중복이 생김. 후처리로 정리하고 깨끗한 출처를 따로 붙인다.
+    """
+    # 인라인 [참고자료 N] / 참고자료 N 토큰 제거
+    answer = re.sub(r"\[?\s*참고자료\s*\d+\s*\]?", "", answer)
+    # 첫 출처 마커(출처: 또는 [출처)부터 끝까지 잘라냄 (모델이 붙인 출처 꼬리 제거)
+    answer = re.split(r"\n?\s*(?:출처\s*[:：]|\[출처)", answer, maxsplit=1)[0]
+    # 잔재 메타 줄(업데이트/유효기간/마지막 업데이트/날짜:) 제거
+    kept = []
+    for ln in answer.split("\n"):
+        s = ln.strip().lstrip("[(-* ")
+        if re.match(r"^(업데이트|유효기간|마지막\s*업데이트|날짜)\s*[:：]", s):
+            continue
+        kept.append(ln)
+    return "\n".join(kept).strip()
+
+
 def _load_questions(path: str) -> list[dict]:
     """JSONL / JSON / CSV 다중 포맷 지원 어댑터."""
     p = Path(path)
@@ -123,13 +143,16 @@ def _rag_answer(
         except Exception as e:
             answer = f"생성 오류: {e}"
 
+    # 모델이 베껴 쓴 지저분한 출처/메타/참고자료 토큰 제거 후 깔끔한 출처 1줄로 통일
+    answer = _clean_answer(answer)
+
     # CRAG ambiguous 단서 추가 (부분 매칭일 때 - 거절은 아님)
     if getattr(rejection, "caveat", ""):
         answer = answer.rstrip() + f"\n\n※ {rejection.caveat}"
 
-    # 출처 강제 추가 (포함 안 돼 있으면)
-    if not _SOURCE_PATTERN.search(answer) and sources:
-        answer = answer.rstrip() + f"\n\n출처: {sources[0]}"
+    # 깨끗한 출처 1줄 (실제 URL만, 중복 제거)
+    if sources:
+        answer = answer.rstrip() + "\n\n출처: " + ", ".join(sources[:3])
 
     if return_context:
         return answer, top_docs, False
