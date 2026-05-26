@@ -123,10 +123,10 @@ class AcademicCrawler(BaseCrawler):
             "2513194", "2513161",
         ]
         # 동적 수집
-        board_nos = _fetch_board_nos(BOARD_CODE, "07020101", pages=3)
+        board_nos = _fetch_board_nos(BOARD_CODE, "07020101", pages=10)
         all_nos = list(dict.fromkeys(known_nos + board_nos))  # 중복 제거, 순서 유지
 
-        for ntt_no in all_nos[:25]:
+        for ntt_no in all_nos[:100]:
             post = _fetch_post(ntt_no, BOARD_CODE)
             if post and post["text"].strip():
                 docs.append(self._make_doc(

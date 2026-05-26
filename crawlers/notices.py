@@ -39,7 +39,7 @@ class NoticesCrawler(BaseCrawler):
             except Exception as e:
                 print(f"[notices] {url} 목록 실패: {e}")
                 continue
-            for row in soup.select("tr, .board-list li")[:12]:
+            for row in soup.select("tr, .board-list li")[:30]:
                 title_tag = row.select_one("td.subject a, .tit a, td a, .title a")
                 if not title_tag:
                     continue

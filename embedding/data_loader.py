@@ -15,19 +15,20 @@ from typing import Any
 
 CRAWLED_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "crawled")
 
-# 스코프 제외 파일 (컴공 외 학과 풀크롤 결과). 로드하지 않음.
+# 스코프 변경: 전교생 대상으로 확장. departments_humanities_social 활성화.
+# 아직 데이터 없는 것만 denylist에 남김.
 DEPARTMENT_DENYLIST = {
-    "departments_humanities_social.json",
-    "departments_natural_eng_pharm_med.json",
-    "departments_others.json",
-    "all_departments.json",
+    "departments_natural_eng_pharm_med.json",  # 데이터 없음(미수집)
+    "departments_others.json",                 # 데이터 없음(미수집)
+    "all_departments.json",                    # 통합본 중복
 }
 
-# 개별 카테고리 로드 시 사용할 화이트리스트 (14 카테고리 + 컴공 department_general).
+# 개별 카테고리 로드 시 사용할 화이트리스트 (전 학과 + 공통 정보).
 CATEGORY_FILES = [
     "academic.json", "administration.json", "scholarship.json", "career.json",
     "dining.json", "library.json", "shuttle.json", "dormitory.json",
     "department_general.json",  # 컴퓨터인공지능학부
+    "departments_humanities_social.json",  # 인문/사회/경상/사범 학과
     "facilities.json", "general.json",
     "extracurricular.json", "international.json", "student_life.json",
     "notices.json",

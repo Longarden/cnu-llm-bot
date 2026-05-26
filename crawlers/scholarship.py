@@ -97,10 +97,10 @@ class ScholarshipCrawler(BaseCrawler):
             "2513193", "2513192", "2513188", "2513090", "2513024",
             "2513013", "2513012", "2513011", "2513010", "2512991",
         ]
-        board_nos = _fetch_board_nos(BOARD_CODE, pages=4)
+        board_nos = _fetch_board_nos(BOARD_CODE, pages=10)
         all_nos = list(dict.fromkeys(known_nos + board_nos))
 
-        for ntt_no in all_nos[:30]:
+        for ntt_no in all_nos[:100]:
             post = _fetch_post(ntt_no, BOARD_CODE)
             if post and post["text"].strip():
                 docs.append(self._make_doc(

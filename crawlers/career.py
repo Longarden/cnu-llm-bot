@@ -103,10 +103,10 @@ class CareerCrawler(BaseCrawler):
             "2513186", "2513099", "2513094", "2513073", "2513068",
             "2513002", "2512989", "2512987",
         ]
-        recruit_nos = _fetch_board_nos(BOARD_CODE_RECRUIT, "07050101", pages=3)
+        recruit_nos = _fetch_board_nos(BOARD_CODE_RECRUIT, "07050101", pages=10)
         all_recruit = list(dict.fromkeys(recruit_known + recruit_nos))
 
-        for ntt_no in all_recruit[:20]:
+        for ntt_no in all_recruit[:80]:
             post = _fetch_post(ntt_no, BOARD_CODE_RECRUIT)
             if post and post["text"].strip():
                 docs.append(self._make_doc(
@@ -120,12 +120,12 @@ class CareerCrawler(BaseCrawler):
 
         # 새소식 게시판 취업 관련 게시물
         news_known = ["2513161", "2513194"]
-        news_nos = _fetch_board_nos(BOARD_CODE_NEWS, "07010101", pages=2)
+        news_nos = _fetch_board_nos(BOARD_CODE_NEWS, "07010101", pages=10)
         # 취업/채용 키워드 필터링 (제목 텍스트는 없으므로 일단 수집)
         all_news = list(dict.fromkeys(news_known + news_nos))
 
         career_keywords = ["채용", "취업", "인턴", "박람회", "설명회", "진로", "현장실습", "취창업"]
-        for ntt_no in all_news[:30]:
+        for ntt_no in all_news[:80]:
             post = _fetch_post(ntt_no, BOARD_CODE_NEWS)
             if post and post["text"].strip():
                 # 취업 관련 키워드가 제목 또는 본문에 있는 경우만

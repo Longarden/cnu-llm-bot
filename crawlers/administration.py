@@ -98,10 +98,10 @@ class AdministrationCrawler(BaseCrawler):
         # 행정 공지 게시판 (새소식)
         known_nos = ["2511413", "2513186", "2513099", "2513094", "2513091",
                      "2513073", "2513068", "2513002", "2512989", "2512987"]
-        board_nos = _fetch_board_nos(BOARD_CODE, "07010101", pages=3)
+        board_nos = _fetch_board_nos(BOARD_CODE, "07010101", pages=10)
         all_nos = list(dict.fromkeys(known_nos + board_nos))
 
-        for ntt_no in all_nos[:25]:
+        for ntt_no in all_nos[:100]:
             post = _fetch_post(ntt_no, BOARD_CODE)
             if post and post["text"].strip():
                 docs.append(self._make_doc(
