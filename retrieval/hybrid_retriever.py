@@ -80,17 +80,63 @@ def init_bm25_from_db() -> None:
         print(f"[hybrid_retriever] BM25 인덱스 구축 완료: {len(docs)}건")
 
 
-def retrieve(question: str, n_results: int = 10, date_filter: dict | None = None) -> list[dict]:
+def retrieve(question: str, n_results: int = 10, date_filter: dict | None = None,
+             llm_call=None, use_query_transform: bool = False,
+             use_meta_boost: bool = False) -> list[dict]:
     """하이브리드 검색. sparse + dense + RRF 융합 결과 반환.
+
+    W2 use_query_transform=True + llm_call 주면 Multi-Query(sparse 다중) + HyDE(dense)로 recall ↑.
+    W3 use_meta_boost=True 면 freshness/category 가중으로 랭킹 미세 조정.
 
     date_filter는 Chroma where로 넘기지 않고(문자열 valid_until 타입 크래시 회피)
     융합 결과를 후처리로 거른다. ISO 날짜(YYYY-MM-DD)는 사전식 비교=시간순.
     """
-    # 날짜 필터가 있으면 후처리에서 일부가 빠질 수 있어 넉넉히 검색
     pull = n_results * 2 if date_filter else n_results
-    sparse_results = _sparse_search(question, pull)
-    dense_results = _dense_search(question, pull)
+
+    # W2: 쿼리 변환
+    queries = [question]
+    dense_query = question
+    if use_query_transform and llm_call:
+        try:
+            from .query_transform import expand_multi_query, hyde
+            queries = expand_multi_query(question, llm_call, n=2)
+            hyde_doc = hyde(question, llm_call)
+            if hyde_doc:
+                dense_query = hyde_doc
+        except Exception as e:
+            print(f"[hybrid_retriever] query_transform 실패, 폴백: {e}")
+
+    # sparse: 여러 쿼리 결과 합쳐서 한 번에 RRF에 넣기 위해 펼침
+    if len(queries) == 1:
+        sparse_results = _sparse_search(queries[0], pull)
+    else:
+        # 변형 쿼리 결과를 각각 가져온 뒤 점수 기준 상위만 모음 (중복 키는 첫 등장 유지)
+        seen = set()
+        merged: list[dict] = []
+        for q in queries:
+            for r in _sparse_search(q, pull):
+                key = r.get("original_text") or ""
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(r)
+                if len(merged) >= pull * 2:
+                    break
+            if len(merged) >= pull * 2:
+                break
+        sparse_results = merged
+
+    dense_results = _dense_search(dense_query, pull)
     fused = _reciprocal_rank_fusion(sparse_results, dense_results)
+
+    # W3: 메타데이터 가중 (RRF 후, 필터 전 — 컷오프 영향 없이 랭킹 조정)
+    if use_meta_boost:
+        try:
+            from .metadata_boost import apply_boost
+            fused = apply_boost(fused, question)
+        except Exception as e:
+            print(f"[hybrid_retriever] meta_boost 실패, 폴백: {e}")
+
     if date_filter:
         fused = _apply_date_filter(fused, date_filter)
     fused = _apply_hall_filter(fused, question)
