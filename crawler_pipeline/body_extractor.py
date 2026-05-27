@@ -42,7 +42,9 @@ def extract_main_text(html: str, min_len: int = 40) -> str | None:
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(html, "html.parser")
         for cls in ("board_viewDetail", "board_view_cont", "bbs_content",
-                    "view_cont", "view-cont", "editor_view", "bbs_view_cont"):
+                    "view_cont", "view-cont", "editor_view", "bbs_view_cont",
+                    "b-text-box", "b-box02", "article-body", "bbs_view_content",
+                    "content-body", "view-body", "board-content"):
             el = soup.find(class_=cls)
             if not el:
                 continue
@@ -84,11 +86,12 @@ def fetch_body(url: str, timeout: int = 10, min_len: int = 40) -> str | None:
     return extract_main_text(html, min_len=min_len)
 
 
-def fetch_post(url: str, timeout: int = 20, min_len: int = 40) -> dict | None:
+def fetch_post(url: str, timeout: int = 20, min_len: int = 40,
+               include_attachments: bool = False) -> dict | None:
     """게시판 상세 URL -> {'url','title','date','text'} 또는 None.
 
-    trafilatura로 본문 추출. 본문이 부실하면 None을 반환해
-    '게시물 NNNN' 같은 쓰레기 문서가 저장되는 것을 막는다(셀렉터 의존 제거).
+    trafilatura → BS4 폴백으로 본문 추출. 본문 부실시 None.
+    include_attachments=True 면 첨부 HWP/PDF 텍스트도 본문 뒤에 합친다.
     """
     if not url or not url.startswith("http"):
         return None
@@ -99,6 +102,15 @@ def fetch_post(url: str, timeout: int = 20, min_len: int = 40) -> dict | None:
     body = extract_main_text(html, min_len=min_len)
     if not body:
         return None
+    # 첨부 본문 합본
+    if include_attachments:
+        try:
+            from .attachment_parser import fetch_attachments_text
+            atch_text = fetch_attachments_text(html, url)
+            if atch_text:
+                body = body + "\n\n" + atch_text
+        except Exception:
+            pass
     # 제목: 본문 첫 줄(표 구분자 정리), trafilatura 본문은 보통 글 제목으로 시작
     first = body.lstrip("| \n").split("\n", 1)[0].strip(" |")
     title = first[:80] if first else url
