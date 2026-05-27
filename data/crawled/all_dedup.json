@@ -187,28 +187,6 @@
     "date": "2026-04-30"
   },
   {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/1_63145",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "(영상)열람실 좌석 예약 안내 2026-04-30 조회 603 작성자 서비스*원팀 이메일 안드로이드 [NFC 읽기/쓰기] 설정 ON 필수!!",
-    "title": "충남대 도서관 공지: (영상)열람실 좌석 예약 안내",
-    "content": "(영상)열람실 좌석 예약 안내 2026-04-30 조회 603 작성자 서비스*원팀 이메일 안드로이드 [NFC 읽기/쓰기] 설정 ON 필수!!",
-    "date": "2026-04-30"
-  },
-  {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/1_63133",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "(필수)도서관 신규 앱 설치!! 2026-04-28 조회 1053 작성자 서비스*원팀 이메일",
-    "title": "충남대 도서관 공지: (필수)도서관 신규 앱 설치!!",
-    "content": "(필수)도서관 신규 앱 설치!! 2026-04-28 조회 1053 작성자 서비스*원팀 이메일",
-    "date": "2026-04-28"
-  },
-  {
     "source_url": "https://library.cnu.ac.kr/bbs/content/34_63176",
     "data_category": "A_library",
     "last_crawled_at": "2026-05-26T10:25:06.847419",
@@ -264,72 +242,6 @@
     "date": "2026-02-04"
   },
   {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/7_63161",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "제10회 KSDC DB 퀴즈 이벤트한국사회과학데이터센터(KSDC)에서 도서관 이용자를 대상으로 퀴즈 이벤트를 진행합니다.\r\n온라인 설문조사와 온",
-    "title": "충남대 도서관 공지: 제10회 KSDC DB 퀴즈 이벤트한국사회과학데이터센터(KSDC)에서 도서관 이용자를 대상으로 퀴즈 이벤트를 진행합니다.\r\n온라인 설문조사와 온",
-    "content": "제10회 KSDC DB 퀴즈 이벤트한국사회과학데이터센터(KSDC)에서 도서관 이용자를 대상으로 퀴즈 이벤트를 진행합니다.\r\n온라인 설문조사와 온",
-    "date": "2026-05-26"
-  },
-  {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/7_63144",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "2026 ACS Publication Quiz Event 안내",
-    "title": "충남대 도서관 공지: 2026 ACS Publication Quiz Event 안내",
-    "content": "2026 ACS Publication Quiz Event 안내",
-    "date": "2026-05-26"
-  },
-  {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/7_63141",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "이용 방법 - Wertpapier Mitteilungen ...",
-    "title": "충남대 도서관 공지: 이용 방법 - Wertpapier Mitteilungen ...",
-    "content": "이용 방법 - Wertpapier Mitteilungen ...",
-    "date": "2026-05-26"
-  },
-  {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/7_63140",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "이용 방법 - Zeitschrift fuer Wirtsch...",
-    "title": "충남대 도서관 공지: 이용 방법 - Zeitschrift fuer Wirtsch...",
-    "content": "이용 방법 - Zeitschrift fuer Wirtsch...",
-    "date": "2026-05-26"
-  },
-  {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/7_63139",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "이용 방법 -Deutsche Gerichtsvollzieh...",
-    "title": "충남대 도서관 공지: 이용 방법 -Deutsche Gerichtsvollzieh...",
-    "content": "이용 방법 -Deutsche Gerichtsvollzieh...",
-    "date": "2026-05-26"
-  },
-  {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/7_63138",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "이용 방법 - Der Betrieb",
-    "title": "충남대 도서관 공지: 이용 방법 - Der Betrieb",
-    "content": "이용 방법 - Der Betrieb",
-    "date": "2026-05-26"
-  },
-  {
     "source_url": "https://library.cnu.ac.kr/bbs/content/1_63103",
     "data_category": "A_library",
     "last_crawled_at": "2026-05-26T10:25:06.847419",
@@ -339,17 +251,6 @@
     "title": "충남대 도서관 공지: 도서관 공지 1_63103",
     "content": "[북큐플러스] 도서 추천 이벤트 '제3회 충대인의 Pick' 운영안내 2026-04-13 조회 219 작성자 자료*영팀 이메일 [북큐플러스] 도서 추천 이벤트 '제3회 충대인의 Pick' 운영안내 '높은 몰입감과 재미를 제공하는 도서'를 추천해주세요! 추천도서는 다음 북큐레이션 도서 선정에 반영될 수 있습니다. · 대상주제: 책으로 도파민 충전 · 추천기간: 2026. 04. 13.(월) ~ 05. 31.(일) · 참여대상: 학내 구성원 · 참여방법: 비교과 통합관리시스템(http://with.cnu.ac.kr) 신청( 학부생 ) > 도서관 홈페이지 로그인 > 추천할 도서 검색 > 클릭 후 상세정보 > 서평쓰기 > 추천글 작성 ※ 비소장 도서의 경우, 붙임 추천양식에 도서명과 추천글 작성 후 이메일 제출(lib6023@cnu.ac.kr)   #메일제목명: [도서추천 이벤트] (학번/사번, 이름) · 작성기준: 추천글 최소 200자 이상(공백 제외) ※[참고] 네이버 '글자수세기' 검색 후 글자 수 확인가능 · 참여혜택: 비교과 마일리지 이수시간(2시간) 인정 (학부생만 해당, 1인당 최대 1회 가능) · 문의전화: 042)821-6023(자료운영팀)",
     "date": "2026-04-13"
-  },
-  {
-    "source_url": "https://library.cnu.ac.kr/bbs/content/43_63153",
-    "data_category": "A_library",
-    "last_crawled_at": "2026-05-26T10:25:06.847419",
-    "valid_until": "2026-06-02T10:25:06.847428",
-    "freshness_tier": "semi_static",
-    "original_text": "(2026.5월) 정시은 작가_The Quiet Pages 2026-05-06 조회 81 작성자 고*미 이메일",
-    "title": "충남대 도서관 공지: 도서관 공지 43_63153",
-    "content": "(2026.5월) 정시은 작가_The Quiet Pages 2026-05-06 조회 81 작성자 고*미 이메일",
-    "date": "2026-05-06"
   },
   {
     "source_url": "https://library.cnu.ac.kr",
@@ -1592,17 +1493,6 @@
     "department": "컴퓨터인공지능학부"
   },
   {
-    "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997723&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
-    "data_category": "G_dormitory",
-    "last_crawled_at": "2026-05-26T10:30:23.038711",
-    "valid_until": "2026-06-02T10:30:23.038723",
-    "freshness_tier": "semi_static",
-    "original_text": "2026년 CNU 응급처치교육 모집 홍보-상점 부과 교육 등록일 2026-05-11 조회수 323 파일 cnu 응급처치교육 (포스터).pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "title": "충남대 기숙사 공지: 2026년 CNU 응급처치교육 모집 홍보-상점 부과 교육",
-    "content": "2026년 CNU 응급처치교육 모집 홍보-상점 부과 교육 등록일 2026-05-11 조회수 323 파일 cnu 응급처치교육 (포스터).pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "date": "2026-05-11"
-  },
-  {
     "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997697&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
     "data_category": "G_dormitory",
     "last_crawled_at": "2026-05-26T10:30:23.038711",
@@ -1625,28 +1515,6 @@
     "date": "2026-04-14"
   },
   {
-    "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997720&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
-    "data_category": "G_dormitory",
-    "last_crawled_at": "2026-05-26T10:30:23.038711",
-    "valid_until": "2026-06-02T10:30:23.038723",
-    "freshness_tier": "semi_static",
-    "original_text": "2026년도 1/4분기 BTL 성과평가회의 결과 및 이용자만족도 조사 결과 공지 등록일 2026-05-07 조회수 183 파일 [결과공고]2026_1q_btl_성과평가 및 이용자만족도 조사 결과.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "title": "충남대 기숙사 공지: 2026년도 1/4분기 BTL 성과평가회의 결과 및 이용자만족도 조사 결과 공지",
-    "content": "2026년도 1/4분기 BTL 성과평가회의 결과 및 이용자만족도 조사 결과 공지 등록일 2026-05-07 조회수 183 파일 [결과공고]2026_1q_btl_성과평가 및 이용자만족도 조사 결과.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "date": "2026-05-07"
-  },
-  {
-    "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997705&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
-    "data_category": "G_dormitory",
-    "last_crawled_at": "2026-05-26T10:30:23.038711",
-    "valid_until": "2026-06-02T10:30:23.038723",
-    "freshness_tier": "semi_static",
-    "original_text": "★[관생자치위원회] 1학기 중간고사 기간 커피차 이벤트★ 등록일 2026-04-20 조회수 332 파일 커피차이벤트_중간.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "title": "충남대 기숙사 공지: ★[관생자치위원회] 1학기 중간고사 기간 커피차 이벤트★",
-    "content": "★[관생자치위원회] 1학기 중간고사 기간 커피차 이벤트★ 등록일 2026-04-20 조회수 332 파일 커피차이벤트_중간.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "date": "2026-04-20"
-  },
-  {
     "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997675&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
     "data_category": "G_dormitory",
     "last_crawled_at": "2026-05-26T10:30:23.038711",
@@ -1656,28 +1524,6 @@
     "title": "충남대 기숙사 공지: [완료][정전안내 4.12] 학내 일부건물의 노후 수배전반 교체공사",
     "content": "[완료][정전안내 4.12] 학내 일부건물의 노후 수배전반 교체공사 등록일 2026-04-07 조회수 283 파일 내용보기 학내 일부건물의 노후 수배전반 교체공사를 시행함에 따라 아래와 같이 정전이 발생됨을 안내 드리오니 참고하시기 바랍니다. 정전일자 : 2026. 4. 12.(일) 정전시간 : 08:00 ~ 12:00 정전범위 : 학생생활관 1동, 2동, 3동, 4동, 5동, 6동, 이인구인재관 주관 : 충남대학교 시설과 ※ 펌프 전원 차단으로 상수도 및 온수 공급이 원활하지 않을 수 있습니다. ※ 1동~6동, 이인구 인재관의 유/무선 인터넷 서비스 중단 ※ 학생생활관 홈페이지&정보시스템 서비스 중단 ※ 작업여건에 따라 정전시간이 다소 변경될 수 있습니다. 목록 이전글 이전글이 없습니다. 다음글",
     "date": "2026-04-07"
-  },
-  {
-    "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997671&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
-    "data_category": "G_dormitory",
-    "last_crawled_at": "2026-05-26T10:30:23.038711",
-    "valid_until": "2026-06-02T10:30:23.038723",
-    "freshness_tier": "semi_static",
-    "original_text": "중간고사에 따른 마루나루 연장 운영 안내 등록일 2026-04-03 조회수 455 파일 내용보기 중간고사 시험기간 동안 마루나루 연장 운영하오니 참고 바랍니다. * 장소: 1차 BTL 마루나루 * 운영기간 및 시간: 2026. 4. 13.(월)~4. 27.(월) 07시~24시 목록 이전글 이전글이 없습니다. 다음글",
-    "title": "충남대 기숙사 공지: 중간고사에 따른 마루나루 연장 운영 안내",
-    "content": "중간고사에 따른 마루나루 연장 운영 안내 등록일 2026-04-03 조회수 455 파일 내용보기 중간고사 시험기간 동안 마루나루 연장 운영하오니 참고 바랍니다. * 장소: 1차 BTL 마루나루 * 운영기간 및 시간: 2026. 4. 13.(월)~4. 27.(월) 07시~24시 목록 이전글 이전글이 없습니다. 다음글",
-    "date": "2026-04-03"
-  },
-  {
-    "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997668&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
-    "data_category": "G_dormitory",
-    "last_crawled_at": "2026-05-26T10:30:23.038711",
-    "valid_until": "2026-06-02T10:30:23.038723",
-    "freshness_tier": "semi_static",
-    "original_text": "★2026학년도 학생생활관 관생자치위원회 선출 공고★ 등록일 2026-03-31 조회수 405 파일 붙임3. 2026학년도 관생자치위원회 선출 공고_홈페이지용.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "title": "충남대 기숙사 공지: ★2026학년도 학생생활관 관생자치위원회 선출 공고★",
-    "content": "★2026학년도 학생생활관 관생자치위원회 선출 공고★ 등록일 2026-03-31 조회수 405 파일 붙임3. 2026학년도 관생자치위원회 선출 공고_홈페이지용.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "date": "2026-03-31"
   },
   {
     "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997665&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
@@ -1700,28 +1546,6 @@
     "title": "충남대 기숙사 공지: [완료]2026년 3월 소방안전점검 알림(직영관) 3.17 ~ 18",
     "content": "[완료]2026년 3월 소방안전점검 알림(직영관) 3.17 ~ 18 등록일 2026-03-10 조회수 345 파일 내용보기 2026년도 3월 학생생활관 소방안전점검(외관점검)을 아래와 같이 실시함을 공지해 드립니다. 점검대상 - 대덕관 : 직영관(1동 ~ 6동, 이인구인재관 포함) - 보운관 : 1동 점검일시 - 대덕관 : 2026. 3. 17.(화) ~ 3.18.(수) - 보운관 : 2026. 3. 18.(수) 점검업체: (주)태정방재 점검내용: 소방안전점검(외관점검) *. 계획된 일정은 사정에 의해 변경 될 수 있습니다. 담담업체 직원들에 의한 원활한 점검이 진행될 수 있도록 협조 부탁드리며, 소방점검 시 경종 등 다소의 소음이 발생할 수 있음을 양해하여 주시기 바랍니다 목록 이전글 이전글이 없습니다. 다음글",
     "date": "2026-03-10"
-  },
-  {
-    "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997633&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
-    "data_category": "G_dormitory",
-    "last_crawled_at": "2026-05-26T10:30:23.038711",
-    "valid_until": "2026-06-02T10:30:23.038723",
-    "freshness_tier": "semi_static",
-    "original_text": "2026년 1분기 학생생활관 이용자 만족도 조사 안내 공지 등록일 2026-03-05 조회수 2579 파일 2026년 1분기 고객만족도 조사 공지.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "title": "충남대 기숙사 공지: 2026년 1분기 학생생활관 이용자 만족도 조사 안내 공지",
-    "content": "2026년 1분기 학생생활관 이용자 만족도 조사 안내 공지 등록일 2026-03-05 조회수 2579 파일 2026년 1분기 고객만족도 조사 공지.pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "date": "2026-03-05"
-  },
-  {
-    "source_url": "https://dorm.cnu.ac.kr/_prog/_board/?mode=V&no=1997626&code=sub03_0301&site_dvs_cd=kr&menu_dvs_cd=0302&skey=&sval=&site_dvs=&GotoPage=",
-    "data_category": "G_dormitory",
-    "last_crawled_at": "2026-05-26T10:30:23.038711",
-    "valid_until": "2026-06-02T10:30:23.038723",
-    "freshness_tier": "semi_static",
-    "original_text": "BTL2차 생활관 이용방법 및 보일러, 에어컨, 조명 리모컨 사용방법 등을 안내드립니다 등록일 2026-03-03 조회수 829 파일 btl2차 생활관 이용방법 및 보일러-에어컨-조명 사용방법 안내(20260318).pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "title": "충남대 기숙사 공지: BTL2차 생활관 이용방법 및 보일러, 에어컨, 조명 리모컨 사용방법 등을 안내드립니다",
-    "content": "BTL2차 생활관 이용방법 및 보일러, 에어컨, 조명 리모컨 사용방법 등을 안내드립니다 등록일 2026-03-03 조회수 829 파일 btl2차 생활관 이용방법 및 보일러-에어컨-조명 사용방법 안내(20260318).pdf 내용보기 목록 이전글 이전글이 없습니다. 다음글",
-    "date": "2026-03-03"
   },
   {
     "source_url": "https://dorm.cnu.ac.kr/html/kr/sub04/sub04_040301.html",
