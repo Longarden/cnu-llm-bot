@@ -21,7 +21,11 @@ def fetch_html(url: str, timeout: int = 10) -> str:
 
 
 def extract_main_text(html: str, min_len: int = 40) -> str | None:
-    """trafilatura 본문 추출. 의미 있는 길이 이상일 때만 반환."""
+    """trafilatura 본문 추출. 의미 있는 길이 이상일 때만 반환.
+
+    trafilatura 실패시 BS4로 알려진 본문 셀렉터(plus.cnu.ac.kr 게시판 등) 폴백.
+    """
+    # 1. trafilatura
     try:
         import trafilatura
         txt = trafilatura.extract(
@@ -33,6 +37,39 @@ def extract_main_text(html: str, min_len: int = 40) -> str | None:
         txt = repair_encoding(txt.strip())
         if len(txt) >= min_len:
             return txt
+    # 2. BS4 폴백 - 알려진 본문 컨테이너 클래스 (plus.cnu.ac.kr 게시판 view 등)
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "html.parser")
+        for cls in ("board_viewDetail", "board_view_cont", "bbs_content",
+                    "view_cont", "view-cont", "editor_view", "bbs_view_cont"):
+            el = soup.find(class_=cls)
+            if not el:
+                continue
+            body = el.get_text(separator="\n", strip=True)
+            if not body:
+                continue
+            body = repair_encoding(body)
+            if len(body) < min_len:
+                continue
+            # 같은 페이지의 제목/메타 함께 묶어 풍부하게
+            extras = []
+            for tcls in ("board_viewTit", "board_viewHtit"):
+                tel = soup.find(class_=tcls)
+                if tel:
+                    t = repair_encoding(tel.get_text(strip=True))
+                    if t and t not in body:
+                        extras.append(t)
+            for mcls in ("board_viewInfo",):
+                mel = soup.find(class_=mcls)
+                if mel:
+                    m = repair_encoding(mel.get_text(separator=" ", strip=True))
+                    if m:
+                        extras.append(m)
+            full = "\n".join(extras + [body])
+            return full
+    except Exception:
+        pass
     return None
 
 
