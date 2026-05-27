@@ -1,0 +1,25 @@
+# planner sweep 큐: 4 워커 끝난 뒤 차례로 도메인 BFS
+# 형식: host  category  max_pages
+# host  카테고리                max
+cns.cnu.ac.kr            F_department         250
+eng.cnu.ac.kr            F_department         350
+cals.cnu.ac.kr           F_department         250
+pharm.cnu.ac.kr          F_department         150
+medicine.cnu.ac.kr       F_department         250
+nursing.cnu.ac.kr        F_department         150
+vetmed.cnu.ac.kr         F_department         150
+homeco.cnu.ac.kr         F_department         150
+human.cnu.ac.kr          F_department         250
+socialscience.cnu.ac.kr  F_department         250
+edu.cnu.ac.kr            F_department         250
+business.cnu.ac.kr       F_department         250
+economics.cnu.ac.kr      F_department         150
+computer.cnu.ac.kr       department_general   200
+ipsi.cnu.ac.kr           C_administration     300
+plus.cnu.ac.kr           B_academic           400
+library.cnu.ac.kr        A_library            200
+dorm.cnu.ac.kr           G_dormitory          150
+cnustudent.cnu.ac.kr     J_extracurricular    200
+dream.cnu.ac.kr          E_career             250
+cnuint.cnu.ac.kr         I_international      150
+mobileadmin.cnu.ac.kr    H_facilities         100
