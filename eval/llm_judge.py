@@ -1,13 +1,19 @@
-# LLM-as-Judge: Claude Sonnet으로 3축 점수 평가
+# LLM-as-Judge: Gemini 2.0 Flash로 3축 점수 평가
 # 축: accuracy(정확도) / relevance(관련성) / domain_compliance(도메인 준수)
 # JUDGE_MOCK=1 환경변수 시 API 없이 더미 점수 반환
+#
+# 사용 SDK: google-genai (신규 SDK). 구버전 google-generativeai는 deprecated.
+#   pip install google-genai
 
 import os
 import json
 import re
+import time
 from typing import Dict, Optional
 
-import anthropic
+# GEMINI API 키는 환경변수로만 받음 (.env 또는 colab secret).
+# 키 없으면 자동으로 mock 모드 폴백. 키 하드코딩 금지.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 JUDGE_SYSTEM_PROMPT = """당신은 충남대학교 RAG 챗봇의 답변을 평가하는 전문 심사위원입니다.
 주어진 질문과 답변을 보고 3개 축에서 0~5점으로 평가하고, 반드시 JSON만 반환하세요."""
@@ -45,26 +51,45 @@ def judge(
     if os.environ.get("JUDGE_MOCK", "0") == "1":
         return _mock_score(question, answer)
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
-        print("ANTHROPIC_API_KEY 없음 → mock 모드 사용")
+        print("[judge] GEMINI_API_KEY 환경변수 없음 → mock 모드 폴백")
         return _mock_score(question, answer)
-
-    client = anthropic.Anthropic(api_key=api_key)
-    prompt = _build_judge_prompt(question, answer, expected)
 
     try:
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=512,
-            messages=[{"role": "user", "content": prompt}],
-            system=JUDGE_SYSTEM_PROMPT,
-        )
-        raw = response.content[0].text.strip()
-        return _parse_score(raw)
-    except Exception as e:
-        print(f"Judge API 오류: {e} → mock 반환")
+        from google import genai
+        from google.genai import types
+    except ImportError:
+        print("google-genai 미설치 → mock 반환 (pip install google-genai)")
         return _mock_score(question, answer)
+
+    client = genai.Client(api_key=api_key)
+    prompt = _build_judge_prompt(question, answer, expected)
+    config = types.GenerateContentConfig(
+        system_instruction=JUDGE_SYSTEM_PROMPT,
+        max_output_tokens=512,
+        temperature=0.0,
+        response_mime_type="application/json",
+    )
+
+    # 503 UNAVAILABLE / 429 RESOURCE_EXHAUSTED 재시도 (지수 백오프)
+    last_err = None
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL, contents=prompt, config=config,
+            )
+            raw = (response.text or "").strip()
+            return _parse_score(raw)
+        except Exception as e:
+            last_err = e
+            msg = str(e)
+            if "503" in msg or "429" in msg or "UNAVAILABLE" in msg:
+                time.sleep(2 ** attempt * 3)  # 3s, 6s, 12s
+                continue
+            break
+    print(f"Judge API 오류: {last_err} → mock 반환")
+    return _mock_score(question, answer)
 
 
 def _parse_score(raw: str) -> Dict:
