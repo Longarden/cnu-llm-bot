@@ -65,10 +65,12 @@ def run_model(model_id, prompts, trust=False):
     outs = []
     for p in prompts:
         msgs = [{"role": "user", "content": p}]
-        ids = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt").to("cuda")
+        text = tok.apply_chat_template(msgs, add_generation_prompt=True, tokenize=False)
+        enc = tok(text, return_tensors="pt").to("cuda")
         with torch.no_grad():
-            g = model.generate(ids, max_new_tokens=80, do_sample=False, pad_token_id=pad)
-        txt = tok.decode(g[0][ids.shape[1]:], skip_special_tokens=True).strip()
+            g = model.generate(**enc, max_new_tokens=80, do_sample=False, pad_token_id=pad)
+        gen = g[0][enc["input_ids"].shape[1]:]
+        txt = tok.decode(gen, skip_special_tokens=True).strip()
         outs.append(txt.split("\n")[0].strip(" -*[]()"))
     del model
     torch.cuda.empty_cache()
