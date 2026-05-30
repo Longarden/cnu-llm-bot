@@ -52,7 +52,19 @@ def main():
     tok.padding_side = "left"
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
-    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, torch_dtype=torch.float16).to("cuda")
+    load_8bit = os.environ.get("CTX_LOAD_8BIT", "0") == "1"
+    if load_8bit:
+        # 7B는 FP16(14GB)이 P100 12GB free에 안 들어감 → 8bit(~8GB).
+        from transformers import BitsAndBytesConfig
+        bnb = BitsAndBytesConfig(load_in_8bit=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_ID, quantization_config=bnb, device_map="cuda"
+        )
+        print("  (8bit 로딩)", flush=True)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_ID, torch_dtype=torch.float16
+        ).to("cuda")
     model.eval()
     print(f"  모델 로딩 {time.time()-t0:.0f}s", flush=True)
 
