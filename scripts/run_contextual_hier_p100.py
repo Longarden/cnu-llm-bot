@@ -31,6 +31,9 @@ SUM_OUT = str(ROOT / "data" / "doc_summaries.json")
 BATCH = int(os.environ.get("CTX_BATCH", "4"))
 DOC_CAP = int(os.environ.get("HIER_DOC_CAP", "4000"))   # 문서 요약에 넣을 앞부분 길이
 CHUNK_CAP = int(os.environ.get("CTX_CHUNK_CAP", "700"))
+# 이 길이 이하 문서는 요약 안 하고 원문 전체를 맥락으로 씀(짧으면 요약=정보손실).
+# 초과 문서만 계층적 요약. adaptive.
+HIER_THRESHOLD = int(os.environ.get("HIER_THRESHOLD", "1500"))
 
 SUM_PROMPT = """다음은 충남대학교 정보 문서입니다. 이 문서가 전체적으로 무엇에 관한 것인지(주제·대상·핵심 내용) 검색 맥락용으로 200자 이내 한 단락으로 요약하세요. 목록·머리말 없이 요약문만 출력.
 
@@ -91,21 +94,29 @@ def main():
         except Exception:
             summaries = {}
     todo = [d for d in docs if (d.get("source_url", "") or "") not in summaries]
-    print(f"  [1단계] 요약할 문서 {len(todo)}개", flush=True)
+    # adaptive: 짧은 문서는 원문 그대로(요약=손실), 긴 문서만 요약
+    short = [d for d in todo if len((d.get("original_text", "") or "").strip()) <= HIER_THRESHOLD]
+    long_ = [d for d in todo if len((d.get("original_text", "") or "").strip()) > HIER_THRESHOLD]
+    print(f"  [1단계] 짧은문서 {len(short)}개(원문그대로) / 긴문서 {len(long_)}개(요약, >{HIER_THRESHOLD}자)", flush=True)
+
+    # 짧은 문서: 원문 전체를 맥락으로 (LLM 호출 0)
+    for d in short:
+        summaries[d.get("source_url", "")] = (d.get("original_text", "") or "").strip()
+
+    # 긴 문서만 요약
     t1 = time.time()
-    for i in range(0, len(todo), BATCH):
-        batch = todo[i:i + BATCH]
+    for i in range(0, len(long_), BATCH):
+        batch = long_[i:i + BATCH]
         prompts = [SUM_PROMPT.format(doc=(d.get("original_text", "") or "")[:DOC_CAP]) for d in batch]
         outs = gen_batch(prompts, 256)
         for d, o in zip(batch, outs):
             summaries[d.get("source_url", "")] = clean_one(o, 10, 400) or o.strip()[:300]
-        if (i // BATCH) % 20 == 0 or i + BATCH >= len(todo):
-            done = len([1 for _ in summaries])
+        if (i // BATCH) % 20 == 0 or i + BATCH >= len(long_):
             el = time.time() - t1
-            print(f"    요약 {min(i+BATCH,len(todo))}/{len(todo)}  {el/60:.0f}분 경과", flush=True)
+            print(f"    긴문서 요약 {min(i+BATCH,len(long_))}/{len(long_)}  {el/60:.0f}분", flush=True)
             json.dump(summaries, open(SUM_OUT, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(summaries, open(SUM_OUT, "w", encoding="utf-8"), ensure_ascii=False)
-    print(f"  [1단계] 완료. 요약 {len(summaries)}개", flush=True)
+    print(f"  [1단계] 완료. 맥락 {len(summaries)}개 (짧은건 원문, 긴건 요약)", flush=True)
 
     # ── 2단계: 청크 메모 (요약 참조) ──
     chunks = chunk_documents(docs)
@@ -123,7 +134,8 @@ def main():
     for i in range(start, len(chunks), BATCH):
         batch = chunks[i:i + BATCH]
         prompts = [HIER_PROMPT.format(
-            summary=summaries.get(c.get("source_url", ""), "")[:300],
+            # 긴문서=요약(~300자), 짧은문서=원문전체(최대 THRESHOLD) → 안 잘리게
+            summary=summaries.get(c.get("source_url", ""), "")[:HIER_THRESHOLD + 200],
             chunk=(c.get("original_text", "") or "")[:CHUNK_CAP],
         ) for c in batch]
         outs = gen_batch(prompts, 80)
