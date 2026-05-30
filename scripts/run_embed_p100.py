@@ -20,9 +20,17 @@ sys.path.insert(0, str(ROOT))
 
 import numpy as np
 
+# 모델 선택: 기본 bge-m3, KURE(한국어 특화) 등 env로 교체
+EMB_MODEL = os.environ.get("EMB_MODEL", "BAAI/bge-m3")
+# 입력: USE_CONTEXTUAL=1 → 메모 붙은 청크(contextual_chunks.json),
+#       USE_CONTEXTUAL=0 → 메모 없는 원본(all_dedup.json → chunk_documents) = baseline
+USE_CTX = os.environ.get("USE_CONTEXTUAL", "1") == "1"
 CTX = os.environ.get("CTX_OUT", str(ROOT / "data" / "contextual_chunks.json"))
-EMB_OUT = str(ROOT / "data" / "embeddings.npy")
-META_OUT = str(ROOT / "data" / "chunks_meta.json")
+ALL = str(ROOT / "data" / "crawled" / "all_dedup.json")
+# 출력 파일에 태그 붙여 조합별로 따로 저장(덮어쓰기 방지)
+TAG = os.environ.get("EMB_TAG", "")
+EMB_OUT = str(ROOT / "data" / f"embeddings{TAG}.npy")
+META_OUT = str(ROOT / "data" / f"chunks_meta{TAG}.json")
 BATCH = int(os.environ.get("EMB_BATCH", "64"))
 
 # 콜랩 chroma.add에 넣을 메타 6종 (vector_store.REQUIRED_METADATA와 동일)
@@ -30,13 +38,27 @@ REQUIRED = ["source_url", "data_category", "last_crawled_at",
             "valid_until", "freshness_tier", "original_text"]
 
 
+def load_chunks():
+    """USE_CONTEXTUAL에 따라 메모 붙은 청크 or 원본 청킹."""
+    if USE_CTX:
+        if not os.path.exists(CTX):
+            print(f"  [에러] {CTX} 없음. 메모(④) 먼저 끝내야 함.", flush=True)
+            sys.exit(1)
+        chunks = json.load(open(CTX, encoding="utf-8"))
+        print(f"  메모 붙은 청크 {len(chunks)}개 (contextual)", flush=True)
+        return chunks
+    # baseline: 원본 → 청킹 (메모 없음, ④ 안 기다림)
+    from embedding.chunker import chunk_documents
+    docs = json.load(open(ALL, encoding="utf-8"))
+    chunks = chunk_documents(docs)
+    print(f"  원본 청크 {len(chunks)}개 (baseline, 메모 없음)", flush=True)
+    return chunks
+
+
 def main():
-    print("=== P100 임베딩 빌드 (bge-m3) ===", flush=True)
-    if not os.path.exists(CTX):
-        print(f"  [에러] {CTX} 없음. 메모(④) 먼저 끝내야 함.", flush=True)
-        sys.exit(1)
-    chunks = json.load(open(CTX, encoding="utf-8"))
-    print(f"  청크 {len(chunks)}개 로드", flush=True)
+    print(f"=== P100 임베딩 빌드 ===", flush=True)
+    print(f"  모델: {EMB_MODEL}  입력: {'메모O' if USE_CTX else 'baseline(메모X)'}  태그: '{TAG}'", flush=True)
+    chunks = load_chunks()
 
     # 빈 텍스트 제외
     items = [(c, (c.get("original_text", "") or "").strip()) for c in chunks]
@@ -51,7 +73,7 @@ def main():
         print(f"  device: {torch.cuda.get_device_name(0)}", flush=True)
 
     t0 = time.time()
-    model = SentenceTransformer("BAAI/bge-m3")  # 자동으로 cuda 사용
+    model = SentenceTransformer(EMB_MODEL)  # 자동으로 cuda 사용
     print(f"  모델 로딩 {time.time()-t0:.0f}s", flush=True)
 
     t1 = time.time()
