@@ -1,7 +1,16 @@
 """
-Qwen2.5-7B-Instruct-AWQ 로드 모듈.
+답변생성 LLM 로드 모듈.
+PRIMARY: EXAONE-3.5-7.8B-Instruct-AWQ (한국어 특화, W4A16, T4=compute7.5에서 정상).
+         transformers>=4.43, autoawq>=0.2.7.post3 필요 (현 pin 4.44.2 충족).
 T4 OOM 시 Qwen2.5-3B-Instruct 로 자동 폴백.
 GPU 없는 환경(iGPU/CPU)에서 import만 성공하고 실제 로드는 코랩에서.
+
+환경변수:
+  MODEL_PRIMARY_NAME   기본 답변모델 override (기본 EXAONE AWQ)
+  MODEL_FALLBACK_NAME  폴백모델 override (기본 Qwen 3B)
+  MODEL_FALLBACK=auto  PRIMARY 로드, OOM 시 폴백 (T4 기본 권장)
+  MODEL_FALLBACK=3b    폴백모델로 강제 (저사양 GPU)
+  MODEL_FALLBACK=0     폴백 비활성화 (OOM 시 예외)
 """
 
 import os
@@ -10,8 +19,10 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# 환경변수로 폴백 모델 지정 가능
-MODEL_PRIMARY = "Qwen/Qwen2.5-7B-Instruct-AWQ"
+# 환경변수로 모델 지정 가능. PRIMARY=EXAONE(한국어 특화), Qwen 7B AWQ는 대안.
+MODEL_PRIMARY = os.environ.get("MODEL_PRIMARY_NAME",
+                               "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ")
+MODEL_QWEN_AWQ = "Qwen/Qwen2.5-7B-Instruct-AWQ"  # A/B 대조군
 MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "Qwen/Qwen2.5-3B-Instruct")
 
 _llm_pipeline = None
@@ -36,7 +47,8 @@ def load_llm(model_name: Optional[str] = None) -> object:
     except ImportError as e:
         raise ImportError(f"transformers / torch 설치 필요: {e}")
 
-    fallback_mode = os.environ.get("MODEL_FALLBACK", "3b").lower()
+    # 기본 auto: PRIMARY(EXAONE AWQ) 로드 후 OOM 시에만 3B 폴백 (T4 권장).
+    fallback_mode = os.environ.get("MODEL_FALLBACK", "auto").lower()
 
     # 강제 폴백 모드
     if fallback_mode == "3b":

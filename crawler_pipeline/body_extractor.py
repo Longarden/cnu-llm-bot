@@ -72,7 +72,46 @@ def extract_main_text(html: str, min_len: int = 40) -> str | None:
             return full
     except Exception:
         pass
+    # 3. 범용 콘텐츠 블록 폴백 - trafilatura/board_view 둘 다 실패한 서비스
+    #    사이트(gymn/library/job/counselling 등)용. 가장 큰 콘텐츠 컨테이너 또는
+    #    body 전체에서 메뉴/스크립트 제거 후 의미 줄만 추림. 마지막 수단.
+    try:
+        body = _generic_block(html, min_len)
+        if body:
+            return body
+    except Exception:
+        pass
     return None
+
+
+_GENERIC_SELECTORS = (
+    "#content", "#contents", "#container", "#subContent", "#sub_content",
+    ".content", ".contents", ".sub_content", ".sub_cont", ".sub_contents",
+    ".cont_area", ".con_area", ".contentBody", ".board_view", ".view_area",
+    "main", "#main", ".main_content", "#content_area",
+)
+
+
+def _generic_block(html: str, min_len: int = 40) -> str | None:
+    """범용 본문 블록 추출. 알려진 콘텐츠 컨테이너 중 가장 텍스트가 큰 것을,
+    없으면 <body>에서 비콘텐츠 태그 제거 후 의미 줄(>8자)만 모은다."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+    for t in soup(["script", "style", "nav", "header", "footer", "noscript",
+                   "form", "aside"]):
+        t.extract()
+    best = ""
+    for sel in _GENERIC_SELECTORS:
+        for el in soup.select(sel):
+            txt = el.get_text(separator="\n", strip=True)
+            if len(txt) > len(best):
+                best = txt
+    if len(best) < 120:
+        b = soup.find("body")
+        best = b.get_text(separator="\n", strip=True) if b else best
+    lines = [l.strip() for l in best.split("\n") if len(l.strip()) > 8]
+    body = repair_encoding("\n".join(lines))
+    return body if len(body) >= min_len else None
 
 
 def fetch_body(url: str, timeout: int = 10, min_len: int = 40) -> str | None:

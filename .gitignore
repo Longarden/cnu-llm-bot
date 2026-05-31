@@ -54,3 +54,8 @@ Thumbs.db
 # 로그
 *.log
 logs/
+
+# 통합 백업/대용량 산출물 (커밋 제외)
+data/crawled/*_bak*
+data/content_images/
+data/crawled_staging/_*.json
