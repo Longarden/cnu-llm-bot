@@ -94,37 +94,92 @@ def load_llm(model_name: Optional[str] = None) -> object:
     return _llm_pipeline
 
 
-def generate(prompt: str, system_prompt: str = "") -> str:
-    """
-    단일 프롬프트로 텍스트 생성.
-    messages 형식으로 chat template 적용.
-    """
+# ── 생성 백엔드 선택 ──────────────────────────────────────────────
+# GEN_BACKEND=api(기본) → Gemini API 우선, 실패/키없음 시 로컬 폴백.
+# GEN_BACKEND=local      → 로컬 EXAONE/Qwen 강제(자작 모델 검증·오프라인용).
+# 과제 PDF: 서버 아키텍처라 외부 API 허용. 성능 우선 = API Pro 기본.
+GEN_BACKEND = os.environ.get("GEN_BACKEND", "api").lower()
+GEMINI_GEN_MODEL = os.environ.get("GEMINI_GEN_MODEL", "gemini-2.5-pro")    # 답변
+GEMINI_FAST_MODEL = os.environ.get("GEMINI_FAST_MODEL", "gemini-2.5-flash")  # 쿼리변환/검증
+
+_gemini_client = None
+
+
+def _get_gemini():
+    """google-genai 클라이언트 싱글턴. 키 없으면 None."""
+    global _gemini_client
+    if _gemini_client is not None:
+        return _gemini_client
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not key:
+        return None
+    try:
+        from google import genai
+        _gemini_client = genai.Client(api_key=key)
+    except Exception as e:
+        logger.warning(f"Gemini 클라이언트 초기화 실패: {e}")
+        return None
+    return _gemini_client
+
+
+def _gemini_generate(prompt: str, system_prompt: str, model: str) -> str:
+    """Gemini API 생성. 실패 시 예외(상위에서 로컬 폴백)."""
+    client = _get_gemini()
+    if client is None:
+        raise RuntimeError("GEMINI_API_KEY 없음")
+    from google.genai import types
+    cfg = types.GenerateContentConfig(
+        system_instruction=system_prompt or None,
+        temperature=0.0,
+        max_output_tokens=1024,
+    )
+    resp = client.models.generate_content(model=model, contents=prompt, config=cfg)
+    return (resp.text or "").strip()
+
+
+def _local_generate(prompt: str, system_prompt: str = "") -> str:
+    """로컬 파이프라인(EXAONE/Qwen) 생성. chat template 적용."""
     pipe = load_llm()
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
-
-    # pipeline이 chat template를 지원하는지 확인
-    try:
-        outputs = pipe(messages)
-        # transformers pipeline chat 출력 형식
-        if isinstance(outputs, list) and outputs:
-            generated = outputs[0]
-            if isinstance(generated, dict):
-                # [{"generated_text": [...]}] 형식
-                text = generated.get("generated_text", "")
-                if isinstance(text, list):
-                    # 마지막 assistant 메시지 추출
-                    for msg in reversed(text):
-                        if isinstance(msg, dict) and msg.get("role") == "assistant":
-                            return msg.get("content", "").strip()
-                return str(text).strip()
-    except Exception as e:
-        logger.error(f"생성 오류: {e}")
-        raise
-
+    outputs = pipe(messages)
+    if isinstance(outputs, list) and outputs:
+        generated = outputs[0]
+        if isinstance(generated, dict):
+            text = generated.get("generated_text", "")
+            if isinstance(text, list):
+                for msg in reversed(text):
+                    if isinstance(msg, dict) and msg.get("role") == "assistant":
+                        return msg.get("content", "").strip()
+            return str(text).strip()
     return ""
+
+
+def generate(prompt: str, system_prompt: str = "") -> str:
+    """답변 생성. GEN_BACKEND=api면 Gemini Pro 우선, 실패 시 로컬 폴백."""
+    if GEN_BACKEND == "api":
+        try:
+            out = _gemini_generate(prompt, system_prompt, GEMINI_GEN_MODEL)
+            if out:
+                return out
+            logger.warning("Gemini 빈 응답 → 로컬 폴백")
+        except Exception as e:
+            logger.warning(f"Gemini 생성 실패({e}) → 로컬 폴백")
+    return _local_generate(prompt, system_prompt)
+
+
+def generate_fast(prompt: str, system_prompt: str = "") -> str:
+    """보조 생성(쿼리변환·근거검증 등). Gemini Flash 우선, 실패 시 로컬 폴백."""
+    if GEN_BACKEND == "api":
+        try:
+            out = _gemini_generate(prompt, system_prompt, GEMINI_FAST_MODEL)
+            if out:
+                return out
+        except Exception as e:
+            logger.warning(f"Gemini Flash 실패({e}) → 로컬 폴백")
+    return _local_generate(prompt, system_prompt)
 
 
 def print_gpu_memory():
