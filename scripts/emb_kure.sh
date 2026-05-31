@@ -1,7 +1,7 @@
 #!/bin/bash
-# GPU0에서 600메모(contextual_chunks.json) KURE(한국어특화) 임베딩.
+# GPU5에서 600메모(contextual_chunks.json) KURE(한국어특화) 임베딩.
 cd /workspace/cnu-llm-bot
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=5
 export EMB_MODEL=nlpai-lab/KURE-v1
 export USE_CONTEXTUAL=1
 export CTX_OUT=data/contextual_chunks.json
