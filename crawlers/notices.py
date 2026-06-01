@@ -11,10 +11,11 @@ class NoticesCrawler(BaseCrawler):
     category_name = "공지사항"
     freshness_tier = "time_sensitive"
 
-    # 충남대 공지 + 컴퓨터공학과 공지 4종
+    # 충남대 공지(plus.cnu 학사/일반공지) + 컴퓨터인공지능학부 공지 4종.
+    # 2026-06-02: 기존 www.cnu.ac.kr/bbs/CNU_40·60 은 404(주소변경) → plus.cnu 게시판으로 교체.
     NOTICE_SOURCES = [
-        ("https://www.cnu.ac.kr/bbs/CNU_40/list.do", "https://www.cnu.ac.kr"),
-        ("https://www.cnu.ac.kr/bbs/CNU_60/list.do", "https://www.cnu.ac.kr"),
+        ("https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0701", "https://plus.cnu.ac.kr"),  # 학사공지
+        ("https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0702", "https://plus.cnu.ac.kr"),  # 일반/장학공지
         ("https://computer.cnu.ac.kr/computer/notice/bachelor.do", "https://computer.cnu.ac.kr"),
         ("https://computer.cnu.ac.kr/computer/notice/notice.do", "https://computer.cnu.ac.kr"),
         ("https://computer.cnu.ac.kr/computer/notice/job.do", "https://computer.cnu.ac.kr"),
