@@ -19,10 +19,12 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# 환경변수로 모델 지정 가능. PRIMARY=EXAONE(한국어 특화), Qwen 7B AWQ는 대안.
+# 환경변수로 모델 지정 가능. 결정(2026-06-01): 답변생성=로컬 EXAONE-2.4B FP16.
+# 양자화 안 함 → T4/P100 어디서나 구동, ~5GB. 정성평가(동작 위주)라 충분.
+# 7.8B-AWQ(T4전용, 고품질)는 MODEL_PRIMARY_NAME 으로 override 가능.
 MODEL_PRIMARY = os.environ.get("MODEL_PRIMARY_NAME",
-                               "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ")
-MODEL_QWEN_AWQ = "Qwen/Qwen2.5-7B-Instruct-AWQ"  # A/B 대조군
+                               "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct")
+MODEL_EXAONE_78B_AWQ = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ"  # 고품질 옵션(T4전용)
 MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "Qwen/Qwen2.5-3B-Instruct")
 
 _llm_pipeline = None
@@ -98,7 +100,7 @@ def load_llm(model_name: Optional[str] = None) -> object:
 # GEN_BACKEND=api(기본) → Gemini API 우선, 실패/키없음 시 로컬 폴백.
 # GEN_BACKEND=local      → 로컬 EXAONE/Qwen 강제(자작 모델 검증·오프라인용).
 # 과제 PDF: 서버 아키텍처라 외부 API 허용. 성능 우선 = API Pro 기본.
-GEN_BACKEND = os.environ.get("GEN_BACKEND", "api").lower()
+GEN_BACKEND = os.environ.get("GEN_BACKEND", "local").lower()
 GEMINI_GEN_MODEL = os.environ.get("GEMINI_GEN_MODEL", "gemini-2.5-pro")    # 답변
 GEMINI_FAST_MODEL = os.environ.get("GEMINI_FAST_MODEL", "gemini-2.5-flash")  # 쿼리변환/검증
 
