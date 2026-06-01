@@ -51,7 +51,7 @@ if SMOKE and 'CLS_EPOCHS' not in os.environ:
 DATA_DIR = ROOT / 'data' / 'cls'
 TRAIN_PATH = DATA_DIR / 'train.json'
 VALID_PATH = DATA_DIR / 'valid.json'
-MODEL_DIR = ROOT / 'model'
+MODEL_DIR = ROOT / os.environ.get('CLS_OUT_DIR', 'model')  # arm별 폴더 분리(SOTA A/B)
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
 LABEL_NAMES = ['졸업요건', '학교공지', '학사일정', '식단', '통학/셔틀']
