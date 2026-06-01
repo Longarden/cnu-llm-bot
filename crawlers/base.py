@@ -39,10 +39,14 @@ class BaseCrawler(ABC):
         }
 
     def _fallback(self) -> list[dict[str, Any]]:
-        """크롤 실패 시 반환할 더미 데이터 (5개)."""
+        """크롤 실패 시 반환할 더미 데이터 (5개).
+
+        is_fallback=True 로 마킹한다 → 실시간 경로(realtime_model._live_crawl)가
+        이 더미를 '라이브 성공'으로 오인해 사용자에게 내보내지 않고 걸러낸다.
+        """
         now = datetime.utcnow().isoformat()
         base_url = f"https://www.cnu.ac.kr/{self.category_id}/fallback"
-        return [
+        docs = [
             self._make_doc(
                 title=f"{self.category_name} 샘플 {i+1}",
                 content=f"[더미] {self.category_name} 카테고리 샘플 데이터 {i+1}번. 실제 크롤링 결과로 교체 예정.",
@@ -52,6 +56,9 @@ class BaseCrawler(ABC):
             )
             for i in range(5)
         ]
+        for d in docs:
+            d["is_fallback"] = True
+        return docs
 
     def safe_crawl(self) -> list[dict[str, Any]]:
         """크롤링 시도 후 실패하면 _fallback() 반환."""

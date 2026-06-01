@@ -115,7 +115,13 @@ def _live_crawl(label: int) -> list[dict]:
         except Exception as e2:
             print(f"[realtime] safe_crawl 도 실패(label={label}): {e2}")
             return []
-    return docs or []
+    # crawl()이 사이트 실패 시 내부적으로 하드코딩 더미(_fallback)를 삼켜 반환할 수 있음.
+    # is_fallback 마킹된 더미는 '라이브 성공'으로 오인되면 안 되므로 제거한다.
+    # (식단 푸드코트·셔틀 정적표 등 실데이터 폴백은 마킹 없으므로 그대로 유지)
+    live = [d for d in (docs or []) if not d.get("is_fallback")]
+    if not live:
+        print(f"[realtime] label={label}: 라이브 0건(더미만) → 상위 폴백")
+    return live
 
 
 def _docs_to_chunks(docs: list[dict]) -> list[dict]:

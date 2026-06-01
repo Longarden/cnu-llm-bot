@@ -101,12 +101,18 @@ def load_llm(model_name: Optional[str] = None) -> object:
         )
         return pipe
 
-    # 1차 시도
+    # 1차 시도. 메모리부족 신호는 torch.cuda.OutOfMemoryError(타입) 외에도
+    # accelerate device_map 산정 실패("won't fit"/"dispatched on the CPU") 등
+    # 문자열만 다른 경우가 있어 타입+다중 문자열로 폭넓게 감지해 3B로 폴백.
+    _OOM_HINTS = ("out of memory", "won't fit", "wont fit", "cuda error",
+                  "not enough", "dispatched on the cpu", "no available memory")
     try:
         _llm_pipeline = _build_pipeline(target_model)
-    except (RuntimeError, Exception) as e:
-        if "out of memory" in str(e).lower() and fallback_mode != "0":
-            logger.warning(f"OOM 발생 ({target_model}). 3B 모델로 폴백.")
+    except Exception as e:
+        is_oom = isinstance(e, getattr(torch.cuda, "OutOfMemoryError", tuple())) \
+            or any(h in str(e).lower() for h in _OOM_HINTS)
+        if is_oom and fallback_mode != "0" and target_model != MODEL_FALLBACK:
+            logger.warning(f"메모리부족 추정({target_model}: {e}). {MODEL_FALLBACK}로 폴백.")
             _llm_pipeline = _build_pipeline(MODEL_FALLBACK)
         else:
             raise
