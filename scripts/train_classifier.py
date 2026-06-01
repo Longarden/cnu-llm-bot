@@ -131,14 +131,19 @@ def main():
             evaluation_strategy='epoch', save_strategy='no', **args_kwargs,
         )
 
-    trainer = Trainer(
+    trainer_kwargs = dict(
         model=model,
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=valid_ds,
-        tokenizer=tokenizer,
         compute_metrics=compute_metrics,
     )
+    try:
+        # 최신 transformers(>=4.46): tokenizer 인자 제거됨 → processing_class 사용
+        trainer = Trainer(processing_class=tokenizer, **trainer_kwargs)
+    except TypeError:
+        # 구버전 transformers는 tokenizer 인자 사용
+        trainer = Trainer(tokenizer=tokenizer, **trainer_kwargs)
 
     trainer.train()
     metrics = trainer.evaluate()
