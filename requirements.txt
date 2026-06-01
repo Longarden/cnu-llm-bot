@@ -6,7 +6,9 @@ torchvision==0.20.1   # torch 2.5.1 호환쌍 필수. (Colab 기본 torchvision�
 #                       안 맞추면 transformers 임포트가 'torchvision::nms' 에러로 통째 깨짐)
 
 # 분류기 + 임베딩 + 로컬 생성(EXAONE/Qwen)
-transformers>=4.40.0
+transformers>=4.46.0,<4.49.0   # 4.49+는 CVE-2025-32434로 torch<2.6에서 pytorch_model.bin 로드를
+#                                차단함. bge-m3/bge-reranker는 .bin만 배포 → 차단 직전 4.48.x로 고정해
+#                                torch 2.5.1로도 로드. (processing_class도 4.46+라 분류기 학습 호환)
 sentence-transformers==3.4.1   # 4.x/5.x는 torchcodec(오디오/비디오 디코더)를 무조건 import →
 #                                torch2.5.1과 안 맞아 libtorchcodec 로딩 실패로 ST 통째 깨짐.
 #                                텍스트 임베딩만 쓰므로 torchcodec 안 끌어오는 3.x로 고정.
