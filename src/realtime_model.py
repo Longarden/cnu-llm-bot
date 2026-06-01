@@ -196,6 +196,9 @@ def answer_realtime(question: str) -> str:
 
     # 그 외(졸업요건0/학사일정2/미분류) → 정적 RAG 폴백
     print(f"[realtime] label={label} → 정적 RAG 폴백(chat_answer)")
+    if STUB:
+        # 생성모델 미로드 모드: 정적 RAG(EXAONE) 대신 라이브 소스 없음을 명시.
+        return f"[정적RAG-스텁] label={label}: 실시간 라이브 소스가 없는 질문(졸업요건/학사일정 등) → 정적 RAG 경로(생성 스텁)."
     try:
         from src.chat_pipeline import chat_answer
         return chat_answer(question)
