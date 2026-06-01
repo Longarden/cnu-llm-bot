@@ -147,7 +147,12 @@ def main():
     print(f'[eval] f1_macro={f1:.4f}  accuracy={acc:.4f}')
 
     # ── 저장: save_pretrained(가중치+config) + tokenizer + model.bin(state_dict) ──
-    model.save_pretrained(MODEL_DIR)
+    try:
+        model.save_pretrained(MODEL_DIR)
+    except (ValueError, RuntimeError):
+        # ELECTRA 등 비연속(non-contiguous) 텐서는 safetensors 저장 불가
+        # → pytorch_model.bin(.bin)으로 저장. from_pretrained가 자동 로드함.
+        model.save_pretrained(MODEL_DIR, safe_serialization=False)
     tokenizer.save_pretrained(MODEL_DIR)
     torch.save(model.state_dict(), MODEL_DIR / 'model.bin')
     # 추론용 라벨 메타(선택): 사람이 읽기 좋게 동봉.
