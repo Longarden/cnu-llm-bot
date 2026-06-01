@@ -2,6 +2,8 @@
 # 과제 사양: torch 2.5.1 명시. CUDA 빌드는 별도 인덱스에서 설치 권장.
 #   예) pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
 torch==2.5.1
+torchvision==0.20.1   # torch 2.5.1 호환쌍 필수. (Colab 기본 torchvision은 torch2.11용이라
+#                       안 맞추면 transformers 임포트가 'torchvision::nms' 에러로 통째 깨짐)
 
 # 분류기 + 임베딩 + 로컬 생성(EXAONE/Qwen)
 transformers>=4.40.0
