@@ -67,6 +67,10 @@ def is_menu_noise(body):
     return sum(1 for l in lines if len(l) < 10) / len(lines) > 0.6
 
 
+_NAV_TOKENS = ('학부소개', '학과소개', '대학원소개', '교수진소개')
+_SHELL_BOILER = ('다음글이 없습니다', '이전글이 없습니다', '자바스크립트를 지원하지')
+
+
 def quality_reason(doc):
     """통과면 None, 탈락이면 사유 문자열."""
     t = (doc.get('original_text') or '').strip()
@@ -78,6 +82,15 @@ def quality_reason(doc):
         return 'low_hangul'
     if is_menu_noise(t):
         return 'menu_noise'
+    # 추출실패 '셸' 탐지(critic 권고): 제목이 네비 토큰 / 본문이 사이드바로 시작 /
+    # 짧은데 prev-next 보일러플레이트 → 가짜본문(공지내용 없음).
+    title = (doc.get('title') or '').strip()
+    if title in _NAV_TOKENS:
+        return 'shell_nav'
+    if t[:30].lstrip().startswith(_NAV_TOKENS):
+        return 'shell_nav'
+    if len(t) < 250 and any(k in t for k in _SHELL_BOILER):
+        return 'shell_nav'
     return None
 
 

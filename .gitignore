@@ -65,3 +65,6 @@ model/*.bin
 model/*.safetensors
 model/checkpoint-*/
 outputs/
+
+# 중간 staging(통합본 all_dedup가 정본)
+data/crawled_staging/*.json
