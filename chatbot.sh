@@ -18,6 +18,15 @@ export GEN_BACKEND="${GEN_BACKEND:-local}"
 echo "[chatbot.sh] (1) 배치 추론 → outputs/chat_output.json"
 python src/gen_chat_output.py
 
+# (옵션) Task3 실시간반영: data/test_realtime.json → outputs/realtime_output.json
+#   셔틀/식단/공지를 라이브 크롤해 최신 정보로 답변. 평가 필수는 아님(Task2만 필수).
+#   REALTIME=1 로 실행하면 켜짐:  REALTIME=1 ./chatbot.sh
+#   REALTIME_STUB=1 이면 생성모델 없이 크롤 본문 요약으로 포맷만 채움.
+if [ "${REALTIME:-0}" = "1" ]; then
+  echo "[chatbot.sh] (옵션) Task3 실시간반영 → outputs/realtime_output.json"
+  python src/realtime_model.py
+fi
+
 # (2) Gradio UI 실행 (분류 라우팅 포함 챗봇)
 echo "[chatbot.sh] (2) Gradio UI 실행"
 python src/chatbot_ui.py

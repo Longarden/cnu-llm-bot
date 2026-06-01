@@ -30,7 +30,8 @@ def launch_app(share: bool | None = None):
         try:
             answer, meta = chat_answer(message, return_meta=True)
             # 분류 흐름 가시화: 예측 유형/카테고리 헤더
-            header = f"[질문유형: {meta['label_name']} → {meta['category'] or '전체검색'}]"
+            cats = ", ".join(meta.get("categories") or []) or "전체검색"
+            header = f"[질문유형: {meta['label_name']} → {cats}]"
             return f"{header}\n\n{answer}"
         except Exception as e:
             return f"오류가 발생했습니다: {e}"

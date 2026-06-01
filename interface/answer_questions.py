@@ -66,17 +66,27 @@ def _load_questions(path: str) -> list[dict]:
 def _soft_route_by_category(docs: list, category_hint, min_keep: int = 2) -> list:
     """분류기 카테고리 힌트로 검색결과를 소프트 라우팅.
 
-    해당 data_category 청크를 앞으로 끌어올리고, 매칭 청크가 min_keep 이상이면
-    그 카테고리만 우선 사용. 매칭이 빈약하면(min_keep 미만) 전체를 그대로 둠(폴백).
-    힌트 없으면 원본 그대로 반환 → 기존 동작 불변.
+    category_hint 는 단일 카테고리 문자열 또는 카테고리 집합/리스트(여러 data_category)를
+    받는다. 청크의 data_category 가 힌트 중 하나라도 매칭되면 앞으로 끌어올리고,
+    매칭 청크가 min_keep 이상이면 그 카테고리들을 우선 사용. 빈약하면(min_keep 미만)
+    전체를 그대로 둠(폴백). 힌트 없으면 원본 그대로 반환 → 기존 동작 불변.
+
+    하위호환: 문자열을 넘기면 단일 원소 집합으로 처리(기존 호출부 그대로 동작).
     """
     if not category_hint or not docs:
+        return docs
+    # 문자열/리스트/집합 모두 허용 → 매칭용 집합으로 정규화
+    if isinstance(category_hint, str):
+        hint_set = {category_hint}
+    else:
+        hint_set = {c for c in category_hint if c}
+    if not hint_set:
         return docs
     matched, others = [], []
     for d in docs:
         meta = d.get("metadata", d) if isinstance(d, dict) else {}
         cat = (meta.get("data_category") or (d.get("data_category") if isinstance(d, dict) else "")) or ""
-        (matched if cat == category_hint else others).append(d)
+        (matched if cat in hint_set else others).append(d)
     if len(matched) >= min_keep:
         # 카테고리 매칭 우선, 나머지는 뒤에 폴백으로 유지
         return matched + others
@@ -92,8 +102,8 @@ def _rag_answer(
 ):
     """단일 질문 RAG 파이프라인 실행.
 
-    category_hint(data_category 문자열) 주면 검색결과를 그 카테고리로 소프트 라우팅.
-    None(기본)이면 기존 동작 그대로 — 시그니처 하위호환.
+    category_hint(data_category 문자열 또는 카테고리 집합/리스트) 주면 검색결과를
+    그 카테고리(들)로 소프트 라우팅. None(기본)이면 기존 동작 그대로 — 시그니처 하위호환.
     """
     from retrieval.date_extractor import extract_dates
     from generation.rejector import check_rejection
