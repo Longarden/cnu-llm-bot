@@ -65,11 +65,21 @@ def load_llm(model_name: Optional[str] = None) -> object:
         tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=True)
         device_map = "auto" if torch.cuda.is_available() else "cpu"
         # AWQ 모델은 AutoAWQ가 transformers와 연동 — 4bit 자동 처리
-        model = AutoModelForCausalLM.from_pretrained(
-            name,
-            device_map=device_map,
-            trust_remote_code=True,
-        )
+        # use_safetensors=True: torch<2.6 .bin 차단(CVE-2025-32434) 우회.
+        # AWQ 모델은 safetensors로 배포되므로 안전. (없으면 자동 폴백)
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                name,
+                device_map=device_map,
+                trust_remote_code=True,
+                use_safetensors=True,
+            )
+        except (ValueError, OSError):
+            model = AutoModelForCausalLM.from_pretrained(
+                name,
+                device_map=device_map,
+                trust_remote_code=True,
+            )
         pipe = pipeline(
             "text-generation",
             model=model,
