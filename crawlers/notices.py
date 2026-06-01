@@ -80,14 +80,18 @@ class NoticesCrawler(BaseCrawler):
             ("컴퓨터공학과 졸업논문 발표 일정 안내", "2026-05-15"),
             ("2026년 1학기 학과 MT 안내", "2026-04-20"),
         ]
-        return [
+        docs = [
             self._make_doc(
                 title=n,
                 content=n,
-                source_url="https://www.cnu.ac.kr/bbs/CNU_40/list.do",
+                source_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0701",
                 now=now,
                 valid=valid,
                 date=d,
             )
             for n, d in notices
         ]
+        # 하드코딩 더미 → 실시간 경로가 라이브로 오인하지 않게 마킹(걸러짐).
+        for doc in docs:
+            doc["is_fallback"] = True
+        return docs
