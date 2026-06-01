@@ -19,12 +19,13 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# 환경변수로 모델 지정 가능. 결정(2026-06-01): 답변생성=Qwen2.5-7B-Instruct-AWQ.
+# 환경변수로 모델 지정 가능. 결정(2026-06-02): 답변생성=Qwen2.5-7B-Instruct(표준) + bitsandbytes 4bit.
 # 이유: torch 2.5.1(과제고정) → transformers 4.48 이하 필요(bge-m3 .bin 로드 CVE 회피).
-#   EXAONE-AWQ의 최신 remote code는 transformers 4.49+(RopeParameters)를 요구해 4.48과 충돌.
-#   Qwen2는 transformers 4.48에 네이티브 지원이라 remote code 없이 안정 로드. T4에서 ~5~6GB.
+#   AWQ 경로(autoawq)는 transformers 4.51을 기대해 4.48에서 transformers.models.qwen3
+#   import 에러로 깨짐. 표준 Qwen2.5-7B(네이티브 지원) + bitsandbytes 4bit가 4.48/torch2.5.1에서
+#   안정적이고 T4에 ~5GB로 적재됨. _build_pipeline이 AWQ가 아니면 자동 4bit 로드.
 MODEL_PRIMARY = os.environ.get("MODEL_PRIMARY_NAME",
-                               "Qwen/Qwen2.5-7B-Instruct-AWQ")
+                               "Qwen/Qwen2.5-7B-Instruct")
 MODEL_EXAONE_78B_AWQ = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ"  # 참고용(torch>=2.6 환경 전용)
 MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "Qwen/Qwen2.5-3B-Instruct")
 
@@ -65,30 +66,37 @@ def load_llm(model_name: Optional[str] = None) -> object:
         logger.info(f"LLM 로드 중: {name}")
         tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=True)
         device_map = "auto" if torch.cuda.is_available() else "cpu"
-        # AWQ 모델은 AutoAWQ가 transformers와 연동 — 4bit 자동 처리
-        # use_safetensors=True: torch<2.6 .bin 차단(CVE-2025-32434) 우회.
-        # AWQ 모델은 safetensors로 배포되므로 안전. (없으면 자동 폴백)
+        load_kwargs = dict(
+            device_map=device_map,
+            trust_remote_code=True,
+            use_safetensors=True,  # torch<2.6 .bin 차단(CVE-2025-32434) 우회
+        )
+        is_awq = "awq" in name.lower()
+        # 비-AWQ 모델은 bitsandbytes 4bit로 로드(T4에 7B ~5GB). AWQ(autoawq)는
+        # transformers 4.51을 기대해 4.48에서 qwen3 import로 깨지므로, 표준 모델 +
+        # bitsandbytes 4bit가 torch 2.5.1/transformers 4.48에서 가장 안정적.
+        if not is_awq and torch.cuda.is_available():
+            try:
+                from transformers import BitsAndBytesConfig
+                load_kwargs["quantization_config"] = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_use_double_quant=True,
+                )
+            except Exception as e:
+                logger.warning(f"bitsandbytes 4bit 구성 실패, 기본 로드: {e}")
         try:
-            model = AutoModelForCausalLM.from_pretrained(
-                name,
-                device_map=device_map,
-                trust_remote_code=True,
-                use_safetensors=True,
-            )
+            model = AutoModelForCausalLM.from_pretrained(name, **load_kwargs)
         except (ValueError, OSError):
-            model = AutoModelForCausalLM.from_pretrained(
-                name,
-                device_map=device_map,
-                trust_remote_code=True,
-            )
+            load_kwargs.pop("use_safetensors", None)
+            model = AutoModelForCausalLM.from_pretrained(name, **load_kwargs)
         pipe = pipeline(
             "text-generation",
             model=model,
             tokenizer=tokenizer,
             max_new_tokens=512,
             do_sample=False,
-            temperature=None,
-            top_p=None,
             repetition_penalty=1.05,
         )
         return pipe

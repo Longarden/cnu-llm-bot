@@ -18,6 +18,7 @@ PDF상 졸업요건은 학과별 전공/교양 요건이라 학과 카테고리 
 환경: Python 3.10+, torch, transformers. GPU 있으면 GPU, 없으면 CPU 자동.
 완전 로컬(외부 API 금지) — 생성은 generation.llm GEN_BACKEND=local(기본 EXAONE).
 """
+import os
 import sys
 from pathlib import Path
 
@@ -108,18 +109,50 @@ def route_question(question: str) -> tuple[int, str, list[str]]:
     return label, LABEL_NAMES.get(label, "?"), LABEL_TO_CATEGORY.get(label, [])
 
 
+# 실시간 라이브 크롤이 정적 코퍼스보다 나은 라벨(식단3/셔틀4).
+# 정적 코퍼스가 얇아(식단9·셔틀11건) 정적 RAG는 거의 거절됨 → 라이브 크롤 우선.
+# CHAT_REALTIME=0 으로 끄면 전부 정적 RAG(오프라인/평가 재현용).
+_REALTIME_LABELS = {3, 4}
+
+
+def _try_realtime(question: str, label: int):
+    """식단/셔틀은 realtime 모듈로 라이브 크롤+생성. 결과 없거나 실패면 None(→정적 폴백)."""
+    if os.environ.get("CHAT_REALTIME", "1") != "1" or label not in _REALTIME_LABELS:
+        return None
+    try:
+        from src.realtime_model import _live_crawl, _docs_to_chunks, _generate_from_live, _CRAWL_FAIL_MSG
+        docs = _live_crawl(label)
+        if not docs:
+            return None
+        chunks = _docs_to_chunks(docs)
+        if not chunks:
+            return None
+        ans = _generate_from_live(question, chunks)
+        if not ans or ans.strip() == _CRAWL_FAIL_MSG:
+            return None
+        return ans
+    except Exception as e:
+        print(f"[chat_pipeline] 실시간 경로 실패, 정적 RAG 폴백: {e}")
+        return None
+
+
 def chat_answer(question: str, return_meta: bool = False):
-    """챗봇 1턴: 분류 → 소프트 라우팅 RAG → 생성. 최종 답변 문자열 반환.
+    """챗봇 1턴: 분류 → (식단/셔틀=실시간 크롤 · 그외=소프트 라우팅 RAG) → 생성.
 
     return_meta=True 면 (answer, {"label","label_name","categories"}) 튜플 반환.
     """
     label, label_name, categories = route_question(question)
 
-    from interface.answer_questions import _rag_answer
-    answer = _rag_answer(
-        question,
-        category_hint=(categories or None),  # 리스트(또는 None) — _soft_route_by_category 가 처리
-    )
+    # 식단/셔틀: 라이브 크롤 우선(정적 코퍼스가 얇아 거절되는 문제 해소)
+    answer = _try_realtime(question, label)
+
+    # 그 외(또는 라이브 실패): 분류 카테고리로 소프트 라우팅 정적 RAG
+    if answer is None:
+        from interface.answer_questions import _rag_answer
+        answer = _rag_answer(
+            question,
+            category_hint=(categories or None),  # 리스트(또는 None) — _soft_route_by_category 가 처리
+        )
 
     if return_meta:
         return answer, {"label": label, "label_name": label_name, "categories": categories}

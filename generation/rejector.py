@@ -21,7 +21,7 @@ SCORE_THRESHOLD = float(os.environ.get("REJECT_THRESHOLD", "0.6"))
 # - dense_score: 코사인 유사도(0~1). bge-m3 관련 청크는 보통 0.4 이상.
 # - sparse_score: BM25(비유계, 0~수십). 용어 겹치면 수치가 큼.
 # rrf_score(최대 ~0.033)는 순위융합 점수라 거절 판정에 쓰지 않는다.
-DENSE_THRESHOLD = float(os.environ.get("REJECT_DENSE_THRESHOLD", "0.35"))
+DENSE_THRESHOLD = float(os.environ.get("REJECT_DENSE_THRESHOLD", "0.30"))
 SPARSE_THRESHOLD = float(os.environ.get("REJECT_SPARSE_THRESHOLD", "3.0"))
 
 # CRAG 3밴드 (크로스인코더 리랭커 점수 0~1 기준, 보정 데이터로 도출).
@@ -176,8 +176,13 @@ def check_rejection(
             top_score = max(raw_scores)
             threshold = DENSE_THRESHOLD
         else:
-            top_score = 0.0
-            threshold = DENSE_THRESHOLD
+            # 점수 정보가 전혀 없는데 청크는 있음 → 점수기반 거절 불가.
+            # 검색이 후보를 돌려준 것이므로 무조건 0점 거절(오거절)하지 않고 통과시킨다.
+            # (생성 단계의 '자료 없음' 지시 + few-shot이 환각을 2차 방어)
+            logger.info("점수 정보 없음 + 청크 존재 → 점수기반 거절 생략(통과)")
+            if retrieved_chunks and _is_stale(retrieved_chunks[0]):
+                return _stale_result(retrieved_chunks[0])
+            return RejectionResult(rejected=False, reason="no_score_pass", message="")
 
     if top_score < threshold:
         logger.info(f"거절: 점수 {top_score:.3f} < 임계값 {threshold}")
