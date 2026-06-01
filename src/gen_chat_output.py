@@ -56,13 +56,14 @@ def _stub_answer(question: str) -> str:
     from src.chat_pipeline import route_question
     from interface.answer_questions import _rag_answer, _soft_route_by_category
 
-    label, label_name, category = route_question(question)
+    label, label_name, categories = route_question(question)
+    cat_label = ",".join(categories) if categories else "미분류"
     # _rag_answer 내부 검색을 그대로 쓰되, 생성은 건너뛰고 컨텍스트만 회수
     try:
         from retrieval.hybrid_retriever import retrieve
         from retrieval.reranker import rerank
         docs = retrieve(question, n_results=10)
-        docs = _soft_route_by_category(docs, category or None)
+        docs = _soft_route_by_category(docs, categories or None)
         try:
             top = rerank(question, docs, top_k=2)
         except Exception:
@@ -77,7 +78,7 @@ def _stub_answer(question: str) -> str:
         url = meta.get("source_url", "")
         if url:
             snippet += f"\n출처: {url}"
-    return f"[유형:{label_name}/{category or '미분류'}] {snippet or '관련 정보를 찾지 못했습니다.'}"
+    return f"[유형:{label_name}/{cat_label}] {snippet or '관련 정보를 찾지 못했습니다.'}"
 
 
 def main():

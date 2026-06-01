@@ -3,12 +3,13 @@
 과제 흐름(PDF p4): 질문 → 질문유형 분류기(model/, label 0~4) → 그 카테고리로 RAG 검색
 우선(soft routing) → EXAONE 생성. 분류기는 가벼워 CPU 추론 가능, 생성은 무거움.
 
-label → data_category 매핑(명시):
-    0 졸업요건  → B_academic   (졸업/학점/요건)
-    1 학교공지  → K_notices
-    2 학사일정  → B_academic   (수강/일정)
-    3 식단      → A_dining
-    4 통학/셔틀 → A_shuttle
+label → data_category 매핑(명시, 카테고리 '리스트'):
+    0 졸업요건  → [B_academic, F_department, department_general]  (전공/교양·학과별)
+    1 학교공지  → [K_notices, F_department]  (학교/학과 공지)
+    2 학사일정  → [B_academic]  (수강/일정)
+    3 식단      → [A_dining]
+    4 통학/셔틀 → [A_shuttle]
+PDF상 졸업요건은 학과별 전공/교양 요건이라 학과 카테고리 포함, 공지도 학과 공지 포함.
 
 기존 함수 재사용:
     - 분류기 추론: model/ (klue/bert-base, AutoModelForSequenceClassification)
@@ -38,13 +39,14 @@ except Exception:
 MODEL_DIR = ROOT / "model"
 MAX_LEN = 64
 
-# label(0~4) → RAG 검색 우선 카테고리(data_category). 과제 사양 그대로.
-LABEL_TO_CATEGORY: dict[int, str] = {
-    0: "B_academic",  # 졸업요건 (졸업/학점/요건)
-    1: "K_notices",   # 학교공지
-    2: "B_academic",  # 학사일정 (수강/일정)
-    3: "A_dining",    # 식단
-    4: "A_shuttle",   # 통학/셔틀
+# label(0~4) → RAG 검색 우선 카테고리(data_category) '리스트'. 과제 사양 그대로.
+# 졸업요건/공지는 학과별이라 학과 카테고리(F_department, department_general)도 포함.
+LABEL_TO_CATEGORY: dict[int, list[str]] = {
+    0: ["B_academic", "F_department", "department_general"],  # 졸업요건 (전공/교양·학과별)
+    1: ["K_notices", "F_department"],                          # 학교공지 (학교/학과)
+    2: ["B_academic"],                                         # 학사일정 (수강/일정)
+    3: ["A_dining"],                                           # 식단
+    4: ["A_shuttle"],                                          # 통학/셔틀
 }
 
 # label → 사람이 읽는 유형명(로그/디버그용). model/label_map.json 과 동일.
@@ -91,33 +93,34 @@ def classify(question: str) -> int:
     return int(logits.argmax(dim=-1).cpu().item())
 
 
-def route_question(question: str) -> tuple[int, str, str]:
-    """질문 → (label, 유형명, data_category). 라우팅 결과를 한 번에 반환.
+def route_question(question: str) -> tuple[int, str, list[str]]:
+    """질문 → (label, 유형명, data_category 리스트). 라우팅 결과를 한 번에 반환.
 
-    분류기 로드/추론 실패(모델 없음 등) 시 label=-1, category="" 로 폴백 →
+    카테고리는 '리스트'로 반환(라벨 하나가 여러 data_category 에 매핑될 수 있음).
+    분류기 로드/추론 실패(모델 없음 등) 시 label=-1, categories=[] 로 폴백 →
     하류 RAG 가 전체 카테고리에서 검색(기존 동작).
     """
     try:
         label = classify(question)
     except Exception as e:
         print(f"[chat_pipeline] 분류 실패, 전체검색 폴백: {e}")
-        return -1, "미분류", ""
-    return label, LABEL_NAMES.get(label, "?"), LABEL_TO_CATEGORY.get(label, "")
+        return -1, "미분류", []
+    return label, LABEL_NAMES.get(label, "?"), LABEL_TO_CATEGORY.get(label, [])
 
 
 def chat_answer(question: str, return_meta: bool = False):
     """챗봇 1턴: 분류 → 소프트 라우팅 RAG → 생성. 최종 답변 문자열 반환.
 
-    return_meta=True 면 (answer, {"label","label_name","category"}) 튜플 반환.
+    return_meta=True 면 (answer, {"label","label_name","categories"}) 튜플 반환.
     """
-    label, label_name, category = route_question(question)
+    label, label_name, categories = route_question(question)
 
     from interface.answer_questions import _rag_answer
     answer = _rag_answer(
         question,
-        category_hint=(category or None),
+        category_hint=(categories or None),  # 리스트(또는 None) — _soft_route_by_category 가 처리
     )
 
     if return_meta:
-        return answer, {"label": label, "label_name": label_name, "category": category}
+        return answer, {"label": label, "label_name": label_name, "categories": categories}
     return answer
