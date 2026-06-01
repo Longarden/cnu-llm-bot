@@ -59,3 +59,9 @@ logs/
 data/crawled/*_bak*
 data/content_images/
 data/crawled_staging/_*.json
+
+# 모델 바이너리/생성출력 (대용량, 다운로드링크로 제출)
+model/*.bin
+model/*.safetensors
+model/checkpoint-*/
+outputs/
