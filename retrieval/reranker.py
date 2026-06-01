@@ -16,14 +16,8 @@ def _get_cross_encoder():
     if _cross_encoder is None:
         try:
             from sentence_transformers import CrossEncoder
-            # use_safetensors=True 강제(embedder와 동일 이유: torch<2.6 .bin 차단 우회).
-            try:
-                _cross_encoder = CrossEncoder(
-                    "BAAI/bge-reranker-v2-m3", max_length=512,
-                    automodel_args={"use_safetensors": True},
-                )
-            except TypeError:
-                _cross_encoder = CrossEncoder("BAAI/bge-reranker-v2-m3", max_length=512)
+            # bge-reranker도 .bin 배포 → transformers<4.49 고정으로 torch 2.5.1 로드 허용.
+            _cross_encoder = CrossEncoder("BAAI/bge-reranker-v2-m3", max_length=512)
         except Exception as e:
             print(f"[reranker] CrossEncoder 로드 실패: {e}, 폴백")
             _cross_encoder = False

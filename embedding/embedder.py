@@ -9,16 +9,9 @@ def get_model():
     global _model
     if _model is None:
         from sentence_transformers import SentenceTransformer
-        # use_safetensors=True 강제: 최신 transformers는 CVE-2025-32434로
-        # torch<2.6에서 pytorch_model.bin 로드를 막음(bge-m3는 .bin+safetensors 둘 다 보유).
-        # safetensors로 가면 torch.load를 안 거쳐 버전제한 우회.
-        try:
-            _model = SentenceTransformer(
-                "BAAI/bge-m3", model_kwargs={"use_safetensors": True}
-            )
-        except TypeError:
-            # 구버전 ST는 model_kwargs 미지원 → 인자 없이 로드
-            _model = SentenceTransformer("BAAI/bge-m3")
+        # bge-m3는 pytorch_model.bin만 배포(safetensors 없음). transformers<4.49 고정으로
+        # torch 2.5.1에서도 .bin 로드 허용(>=4.49는 CVE-2025-32434로 .bin 차단). requirements 참고.
+        _model = SentenceTransformer("BAAI/bge-m3")
     return _model
 
 
