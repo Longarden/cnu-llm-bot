@@ -19,12 +19,13 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# 환경변수로 모델 지정 가능. 결정(2026-06-01): 답변생성=로컬 EXAONE-2.4B FP16.
-# 양자화 안 함 → T4/P100 어디서나 구동, ~5GB. 정성평가(동작 위주)라 충분.
-# 7.8B-AWQ(T4전용, 고품질)는 MODEL_PRIMARY_NAME 으로 override 가능.
+# 환경변수로 모델 지정 가능. 결정(2026-06-01): 답변생성=Qwen2.5-7B-Instruct-AWQ.
+# 이유: torch 2.5.1(과제고정) → transformers 4.48 이하 필요(bge-m3 .bin 로드 CVE 회피).
+#   EXAONE-AWQ의 최신 remote code는 transformers 4.49+(RopeParameters)를 요구해 4.48과 충돌.
+#   Qwen2는 transformers 4.48에 네이티브 지원이라 remote code 없이 안정 로드. T4에서 ~5~6GB.
 MODEL_PRIMARY = os.environ.get("MODEL_PRIMARY_NAME",
-                               "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct")
-MODEL_EXAONE_78B_AWQ = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ"  # 고품질 옵션(T4전용)
+                               "Qwen/Qwen2.5-7B-Instruct-AWQ")
+MODEL_EXAONE_78B_AWQ = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ"  # 참고용(torch>=2.6 환경 전용)
 MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "Qwen/Qwen2.5-3B-Instruct")
 
 _llm_pipeline = None
