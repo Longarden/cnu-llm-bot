@@ -63,13 +63,38 @@ def _load_questions(path: str) -> list[dict]:
     return result
 
 
+def _soft_route_by_category(docs: list, category_hint, min_keep: int = 2) -> list:
+    """분류기 카테고리 힌트로 검색결과를 소프트 라우팅.
+
+    해당 data_category 청크를 앞으로 끌어올리고, 매칭 청크가 min_keep 이상이면
+    그 카테고리만 우선 사용. 매칭이 빈약하면(min_keep 미만) 전체를 그대로 둠(폴백).
+    힌트 없으면 원본 그대로 반환 → 기존 동작 불변.
+    """
+    if not category_hint or not docs:
+        return docs
+    matched, others = [], []
+    for d in docs:
+        meta = d.get("metadata", d) if isinstance(d, dict) else {}
+        cat = (meta.get("data_category") or (d.get("data_category") if isinstance(d, dict) else "")) or ""
+        (matched if cat == category_hint else others).append(d)
+    if len(matched) >= min_keep:
+        # 카테고리 매칭 우선, 나머지는 뒤에 폴백으로 유지
+        return matched + others
+    return docs  # 빈약 → 전체 폴백
+
+
 def _rag_answer(
     question: str,
     llm=None,
     retriever=None,
     return_context: bool = False,
+    category_hint=None,
 ):
-    """단일 질문 RAG 파이프라인 실행."""
+    """단일 질문 RAG 파이프라인 실행.
+
+    category_hint(data_category 문자열) 주면 검색결과를 그 카테고리로 소프트 라우팅.
+    None(기본)이면 기존 동작 그대로 — 시그니처 하위호환.
+    """
     from retrieval.date_extractor import extract_dates
     from generation.rejector import check_rejection
     from generation.prompt import build_user_prompt, build_few_shot_messages, SYSTEM_PROMPT
@@ -97,9 +122,12 @@ def _rag_answer(
             docs = []
         try:
             from retrieval.reranker import rerank
-            top_docs = rerank(question, docs, top_k=3)
+            # 카테고리 힌트 있으면 rerank 전 후보를 소프트 라우팅(상위 후보 보존)
+            routed = _soft_route_by_category(docs, category_hint)
+            top_docs = rerank(question, routed, top_k=3)
         except Exception:
-            top_docs = docs[:3] if docs else []
+            routed = _soft_route_by_category(docs, category_hint)
+            top_docs = routed[:3] if routed else []
 
     # 거절 판정
     rejection = check_rejection(question, top_docs)
