@@ -33,37 +33,73 @@ class DiningCrawler(BaseCrawler):
             date_text = m.group() if m else now[:10]
 
         # 식단 테이블 파싱
+        # rowspan/colspan 을 존중해 grid={(행,열):텍스트} 로 재구성한다.
+        # (원인: 기존 코드는 rows[0] 와 cells 인덱스를 그대로 매핑 → rowspan(끼니 2칸)/
+        #  colspan(구분 2칸)/rowspan=100 placeholder 때문에 끼니·식당·대상이 어긋나
+        #  석식 누락 및 '구분/직원/학생' 잡음이 섞였음.)
+        SKIP_TOKENS = {"구분", "직원", "학생", "메뉴운영내역", "", "-"}
         tables = soup.find_all("table")
         for table in tables:
-            caption = table.find("caption")
-            caption_text = caption.get_text(strip=True) if caption else ""
-
             rows = table.find_all("tr")
             if not rows:
                 continue
 
-            # 헤더에서 식당명 추출
-            headers_row = rows[0].find_all(["th", "td"])
-            restaurant_names = [th.get_text(strip=True) for th in headers_row]
-
-            meal_type = ""
-            for row in rows[1:]:
+            grid: dict[tuple[int, int], str] = {}
+            occupied: dict[tuple[int, int], bool] = {}
+            for ri, row in enumerate(rows):
                 cells = row.find_all(["th", "td"])
-                if not cells:
-                    continue
-                first = cells[0].get_text(strip=True)
-                # 조식/중식/석식 구분
-                if first in ["조식", "중식", "석식"]:
-                    meal_type = first
+                ci = 0
+                for cell in cells:
+                    while occupied.get((ri, ci)):
+                        ci += 1
+                    try:
+                        rs = int(cell.get("rowspan", 1) or 1)
+                    except (TypeError, ValueError):
+                        rs = 1
+                    try:
+                        cs = int(cell.get("colspan", 1) or 1)
+                    except (TypeError, ValueError):
+                        cs = 1
+                    txt = cell.get_text(separator=" ", strip=True)
+                    for dr in range(rs):
+                        for dc in range(cs):
+                            grid[(ri + dr, ci + dc)] = txt
+                            occupied[(ri + dr, ci + dc)] = True
+                    ci += cs
+
+            if not grid:
+                continue
+            nrows = max(r for (r, _) in grid) + 1
+            ncols = max(c for (_, c) in grid) + 1
+
+            # 헤더(행 0)에서 식당명 매핑: 식당 본문은 col>=2 (col0/1 은 '구분').
+            # 식단 테이블이 아니면(예: 안내 텍스트 테이블) col0 끼니가 없어 자연히 건너뜀.
+            restaurant_by_col = {}
+            for c in range(2, ncols):
+                name = grid.get((0, c), "").strip()
+                if name and name not in SKIP_TOKENS:
+                    restaurant_by_col[c] = name
+            if not restaurant_by_col:
+                continue
+
+            for ri in range(1, nrows):
+                meal_type = grid.get((ri, 0), "").strip()
+                target = grid.get((ri, 1), "").strip()  # 직원/학생
+                if meal_type not in ("조식", "중식", "석식"):
                     continue
 
-                for i, cell in enumerate(cells):
-                    cell_text = cell.get_text(separator=" ", strip=True)
-                    if not cell_text or cell_text in ["운영안함", "-", ""]:
+                for c, restaurant in restaurant_by_col.items():
+                    cell_text = grid.get((ri, c), "").strip()
+                    if not cell_text or cell_text in SKIP_TOKENS:
                         continue
-                    restaurant = restaurant_names[i] if i < len(restaurant_names) else f"식당{i}"
-                    title = f"충남대 학식 [{date_text}] {restaurant} {meal_type}"
-                    content = f"[{date_text}] {restaurant} {meal_type}\n{cell_text}"
+                    label = f"{meal_type}({target})" if target else meal_type
+                    if cell_text == "운영안함":
+                        # 끼니 비운영도 묻기 때문에 드롭하지 않고 명시한다.
+                        title = f"충남대 학식 [{date_text}] {restaurant} {label}"
+                        content = f"[{date_text}] {restaurant} {label}\n비운영 (운영 안함)"
+                    else:
+                        title = f"충남대 학식 [{date_text}] {restaurant} {label}"
+                        content = f"[{date_text}] {restaurant} {label}\n{cell_text}"
                     items.append(self._make_doc(title, content, self.BASE_URL, now, valid, date_text))
 
         # 원재료 정보도 추가
