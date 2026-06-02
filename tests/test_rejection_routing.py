@@ -130,6 +130,35 @@ def test_docs_to_chunks_hall_aware_includes_queried_hall():
     assert "제2학생회관" in joined, "질문한 학생회관이 컨텍스트에 포함돼야 함"
 
 
+# ── 중국어 누출 제거(_strip_foreign_lines) ────────────────────────
+def test_strip_foreign_lines_removes_chinese_keeps_korean():
+    from interface.answer_questions import _strip_foreign_lines
+    leaked = (
+        "계절학기 수강신청 일정은 다음과 같습니다:\n"
+        "- 하기 계절학기: 5월 중\n"
+        "- 동기 계절학기: 11월 중\n"
+        "具体的的地说，就是：\n"
+        "- 下学期：5月中旬\n"
+        "- 春季学期：11月中旬\n"
+        "这些日期可能会有所变动，请以学校官方通知为准。"
+    )
+    out = _strip_foreign_lines(leaked)
+    assert "계절학기" in out and "5월 중" in out      # 한국어 유지
+    assert "下学期" not in out and "具体" not in out   # 중국어 제거
+
+
+def test_strip_foreign_lines_keeps_korean_with_hanja():
+    from interface.answer_questions import _strip_foreign_lines
+    s = "졸업 學점은 140學점 이상입니다."  # 한글+한자 혼용 한국어 → 유지
+    assert _strip_foreign_lines(s) == s
+
+
+def test_strip_foreign_lines_all_foreign_keeps_original():
+    from interface.answer_questions import _strip_foreign_lines
+    s = "完成所有必修课程\n达到学分要求"  # 전부 중국어면 과삭제 방지로 원본 유지
+    assert _strip_foreign_lines(s) == s
+
+
 # ── LABEL_TO_CATEGORY 정합성 ───────────────────────────────────────
 def test_label_category_mapping():
     from src.chat_pipeline import LABEL_TO_CATEGORY, LABEL_NAMES

@@ -16,12 +16,35 @@ from typing import Optional
 _SOURCE_PATTERN = re.compile(r"출처\s*:")
 
 
+# 한글/중국어(한자) 판별용. Qwen이 가끔 중국어로 코드스위칭하는데 프롬프트 지시만으론
+# 완전히 막히지 않아, 생성 후처리로 '중국어로 보이는 줄'(한자 다수 + 한글 0)을 결정론적 제거.
+_HANGUL_RE = re.compile(r"[가-힣]")
+_CJK_RE = re.compile(r"[一-鿿]")
+
+
+def _strip_foreign_lines(text: str) -> str:
+    """중국어 누출 줄 제거. 한글이 한 글자도 없고 한자가 2개 이상인 줄을 버린다.
+
+    한국어 줄(한글 포함)이나 한자가 살짝 섞인 한국어(예: 學점)는 그대로 둔다.
+    과삭제 방지: 전부 지워지면 원본을 반환.
+    """
+    out = []
+    for ln in text.split("\n"):
+        if len(_CJK_RE.findall(ln)) >= 2 and not _HANGUL_RE.search(ln):
+            continue  # 중국어 줄로 판단 → 제거
+        out.append(ln)
+    cleaned = "\n".join(out).strip()
+    return cleaned if cleaned else text
+
+
 def _clean_answer(answer: str) -> str:
     """모델이 베껴 쓴 출처/메타/참고자료 토큰 제거 → 본문만 남김.
 
     작은 LLM이 컨텍스트의 '[참고자료 N]', '출처: ... | 업데이트: ...'를 그대로
     베껴 써서 출처 누출·중복이 생김. 후처리로 정리하고 깨끗한 출처를 따로 붙인다.
     """
+    # 중국어 누출 줄 먼저 제거(한국어 전용 챗봇)
+    answer = _strip_foreign_lines(answer)
     # 인라인 [참고자료 N] / 참고자료 N 토큰 제거
     answer = re.sub(r"\[?\s*참고자료\s*\d+\s*\]?", "", answer)
     # 첫 출처 마커(출처: 또는 [출처)부터 끝까지 잘라냄 (모델이 붙인 출처 꼬리 제거)
