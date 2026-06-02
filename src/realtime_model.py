@@ -45,7 +45,8 @@ OUT_DIR = ROOT / "outputs"
 OUT_PATH = OUT_DIR / "realtime_output.json"
 
 STUB = os.environ.get("REALTIME_STUB", "0") == "1"
-MAX_DOCS = int(os.environ.get("REALTIME_MAX_DOCS", "4"))
+# 식단은 여러 식당(제1~4학생회관)×끼니가 있어 4개로 자르면 뒤 식당이 짤림 → 8로 상향.
+MAX_DOCS = int(os.environ.get("REALTIME_MAX_DOCS", "8"))
 
 # 크롤 실패 폴백 문구
 _CRAWL_FAIL_MSG = "실시간 정보를 가져오지 못했습니다."
@@ -124,12 +125,45 @@ def _live_crawl(label: int) -> list[dict]:
     return live
 
 
-def _docs_to_chunks(docs: list[dict]) -> list[dict]:
-    """크롤 dict → build_user_prompt 가 기대하는 청크 포맷으로 변환(상위 MAX_DOCS)."""
+def _docs_to_chunks(docs: list[dict], question: str = "") -> list[dict]:
+    """크롤 dict → build_user_prompt 가 기대하는 청크 포맷으로 변환.
+
+    질문(question)을 주면 질문과 관련된 doc(예: '제2학생회관', '석식')을 앞으로 끌어올려
+    상위 MAX_DOCS 안에 반드시 들어오게 한다. 헤더잡음('구분 조식' 등)·원산지 중복은 뒤로.
+    """
+    def _txt(d):
+        return (d.get("content") or d.get("original_text") or d.get("title", "") or "")
+
+    def _is_noise(d):
+        t = (d.get("title", "") or "")
+        return t.startswith("충남대 학식 [") and ("구분 " in t)  # 끼니 헤더행
+
+    # 질문 토큰(2글자+) 중 doc에 등장하는 게 많을수록 관련도↑
+    q_tokens = [w for w in question.replace("?", " ").split() if len(w) >= 2]
+
+    def _score(d):
+        txt = _txt(d)
+        title = d.get("title", "") or ""
+        s = sum(1 for w in q_tokens if w in txt)
+        # 학생회관/끼니 직접 매칭 가산
+        import re as _re
+        for m in _re.findall(r"제?\s*[1-4]\s*학생회관", question):
+            if m.replace(" ", "") in txt.replace(" ", ""):
+                s += 3
+        for meal in ("조식", "중식", "석식", "아침", "점심", "저녁"):
+            if meal in question and meal in txt:
+                s += 2
+        if _is_noise(d):
+            s -= 5
+        if "원산지" in title:
+            s -= 2
+        return s
+
+    ordered = sorted(docs, key=_score, reverse=True) if q_tokens else docs
     chunks = []
-    for d in docs[:MAX_DOCS]:
+    for d in ordered[:MAX_DOCS]:
         chunks.append({
-            "text": d.get("content") or d.get("original_text") or d.get("title", ""),
+            "text": _txt(d),
             "source_url": d.get("source_url", ""),
             "last_crawled_at": d.get("last_crawled_at", ""),
             "valid_until": d.get("valid_until", ""),
@@ -195,7 +229,7 @@ def answer_realtime(question: str) -> str:
         docs = _live_crawl(label)
         if not docs:
             return _CRAWL_FAIL_MSG
-        chunks = _docs_to_chunks(docs)
+        chunks = _docs_to_chunks(docs, question)
         if not chunks:
             return _CRAWL_FAIL_MSG
         return _generate_from_live(question, chunks)

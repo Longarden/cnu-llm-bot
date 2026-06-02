@@ -96,6 +96,40 @@ def test_soft_route_no_hint_passthrough():
     assert _soft_route_by_category(docs, None) == docs
 
 
+# ── 학부 우선 필터(_deprioritize_grad) ────────────────────────────
+def test_deprioritize_grad_moves_grad_to_back():
+    from interface.answer_questions import _deprioritize_grad
+    docs = [
+        {"source_url": "https://medicine.cnu.ac.kr/medicine/grad/change-grad.do", "title": "대학원 전과", "original_text": "g"},
+        {"source_url": "https://plus.cnu.ac.kr/html/affairs.html", "title": "학부 전과", "original_text": "u"},
+    ]
+    out = _deprioritize_grad(docs)
+    assert out[0]["title"] == "학부 전과"   # 학부가 앞으로
+    assert out[-1]["title"] == "대학원 전과"  # 대학원은 뒤로(드롭 아님)
+
+
+def test_deprioritize_grad_all_grad_keeps_original():
+    from interface.answer_questions import _deprioritize_grad
+    docs = [{"source_url": "x/grad", "title": "대학원만"}]
+    assert _deprioritize_grad(docs) == docs  # 전부 대학원이면 원본 유지
+
+
+# ── 식단 홀-인지 청크 선택(_docs_to_chunks) ────────────────────────
+def test_docs_to_chunks_hall_aware_includes_queried_hall():
+    """제2학생회관이 5번째여도 질문에 맞춰 상위로 끌려와 컨텍스트에 포함돼야 함."""
+    from src.realtime_model import _docs_to_chunks
+    docs = [
+        {"title": "충남대 학식 [d] 구분 조식", "content": "구분 조식"},
+        {"title": "충남대 학식 [d] 제1학생회관 조식", "content": "제1학생회관 조식 메뉴"},
+        {"title": "충남대 학식 [d] 구분 중식", "content": "구분 중식"},
+        {"title": "충남대 학식 [d] 제1학생회관 중식", "content": "제1학생회관 중식 메뉴"},
+        {"title": "충남대 학식 [d] 제2학생회관 중식", "content": "제2학생회관 중식 메뉴 김치찌개"},
+    ]
+    chunks = _docs_to_chunks(docs, "제2학생회관 오늘 점심 뭐 나와?")
+    joined = " ".join(c["text"] for c in chunks)
+    assert "제2학생회관" in joined, "질문한 학생회관이 컨텍스트에 포함돼야 함"
+
+
 # ── LABEL_TO_CATEGORY 정합성 ───────────────────────────────────────
 def test_label_category_mapping():
     from src.chat_pipeline import LABEL_TO_CATEGORY, LABEL_NAMES

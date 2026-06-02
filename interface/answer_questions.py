@@ -93,6 +93,35 @@ def _soft_route_by_category(docs: list, category_hint, min_keep: int = 2) -> lis
     return docs  # 빈약 → 전체 폴백
 
 
+# 대학원 자료 식별 힌트(URL/제목). 학부생 대상 챗봇이라 대학원 규정이 학부 답을 가리지 않게 후순위로.
+_GRAD_URL_HINTS = ("/grad", "graduate", "/gradsch", "daehakwon")
+_GRAD_TITLE_HINTS = ("대학원", "전문대학원", "특수대학원")
+
+
+def _deprioritize_grad(docs: list) -> list:
+    """대학원 표시가 있는 청크를 뒤로 미룬다(드롭은 안 함, 폴백 유지).
+
+    예: 전과 질문에 medicine.cnu/grad(대학원 전과 규정)가 1위로 와서 학부 답을 가리는 문제 해소.
+    학부 자료가 우선 노출되고, 대학원 자료는 학부에 답이 없을 때만 폴백으로 쓰인다.
+    """
+    if not docs:
+        return docs
+
+    def _is_grad(d):
+        if not isinstance(d, dict):
+            return False
+        meta = d.get("metadata", d)
+        url = (meta.get("source_url", "") or "").lower()
+        title = (d.get("title", "") or meta.get("title", "") or "")
+        if any(h in url for h in _GRAD_URL_HINTS):
+            return True
+        return any(h in title for h in _GRAD_TITLE_HINTS)
+
+    ug = [d for d in docs if not _is_grad(d)]
+    grad = [d for d in docs if _is_grad(d)]
+    return ug + grad if ug else docs  # 전부 대학원뿐이면 원본 유지
+
+
 def _rag_answer(
     question: str,
     llm=None,
@@ -133,10 +162,10 @@ def _rag_answer(
         try:
             from retrieval.reranker import rerank
             # 카테고리 힌트 있으면 rerank 전 후보를 소프트 라우팅(상위 후보 보존)
-            routed = _soft_route_by_category(docs, category_hint)
+            routed = _deprioritize_grad(_soft_route_by_category(docs, category_hint))
             top_docs = rerank(question, routed, top_k=3)
         except Exception:
-            routed = _soft_route_by_category(docs, category_hint)
+            routed = _deprioritize_grad(_soft_route_by_category(docs, category_hint))
             top_docs = routed[:3] if routed else []
 
     # 거절 판정
