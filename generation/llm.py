@@ -64,11 +64,16 @@ def load_llm(model_name: Optional[str] = None) -> object:
 
     def _build_pipeline(name: str) -> object:
         logger.info(f"LLM 로드 중: {name}")
-        tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=True)
+        # MODEL_REVISION: 특정 커밋 고정용. EXAONE처럼 최신 remote code가 transformers 4.49+를
+        # 요구해 깨질 때, RopeParameters 이전 옛 리비전(예: EXAONE-3.5-2.4B 8e6fc27, 2024-12-09)을
+        # 박으면 transformers 4.48(torch 2.5.1 조건)에서도 로드 가능.
+        revision = os.environ.get("MODEL_REVISION", "").strip() or None
+        tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=True, revision=revision)
         device_map = "auto" if torch.cuda.is_available() else "cpu"
         load_kwargs = dict(
             device_map=device_map,
             trust_remote_code=True,
+            revision=revision,
             use_safetensors=True,  # torch<2.6 .bin 차단(CVE-2025-32434) 우회
         )
         is_awq = "awq" in name.lower()
@@ -184,8 +189,17 @@ def _local_generate(prompt: str, system_prompt: str = "") -> str:
     return ""
 
 
-def generate(prompt: str, system_prompt: str = "") -> str:
-    """답변 생성. GEN_BACKEND=api면 Gemini Pro 우선, 실패 시 로컬 폴백."""
+import re as _re_cjk
+_CJK_RE = _re_cjk.compile(r"[一-鿿]")
+
+
+def _has_chinese(text: str) -> bool:
+    """한자(중국어)가 2자 이상이면 코드스위칭 의심."""
+    return len(_CJK_RE.findall(text or "")) >= 2
+
+
+def _generate_once(prompt: str, system_prompt: str = "") -> str:
+    """1회 생성. GEN_BACKEND=api면 Gemini Pro 우선, 실패 시 로컬 폴백."""
     if GEN_BACKEND == "api":
         try:
             out = _gemini_generate(prompt, system_prompt, GEMINI_GEN_MODEL)
@@ -195,6 +209,25 @@ def generate(prompt: str, system_prompt: str = "") -> str:
         except Exception as e:
             logger.warning(f"Gemini 생성 실패({e}) → 로컬 폴백")
     return _local_generate(prompt, system_prompt)
+
+
+def generate(prompt: str, system_prompt: str = "") -> str:
+    """답변 생성 + 중국어 누출 시 한국어로 1회 재생성.
+
+    Qwen 등이 가끔 중국어로 코드스위칭하는데, 그 줄을 '삭제'하면 거기에만 있던
+    정보가 손실될 수 있다. 그래서 중국어가 감지되면 같은 컨텍스트로 '한국어로만'
+    다시 생성해 정보를 보존한다(삭제는 최종 안전망으로 _clean_answer가 담당).
+    """
+    out = _generate_once(prompt, system_prompt)
+    if _has_chinese(out):
+        logger.info("중국어 누출 감지 → 한국어 재생성 시도")
+        ko_sys = (system_prompt +
+                  "\n\n[중요] 직전 답변에 중국어가 섞였습니다. 절대 중국어를 쓰지 말고, "
+                  "동일한 정보를 빠짐없이 반드시 한국어로만 다시 작성하십시오.").strip()
+        retry = _generate_once(prompt, ko_sys)
+        if retry and not _has_chinese(retry):
+            return retry
+    return out
 
 
 def generate_fast(prompt: str, system_prompt: str = "") -> str:
