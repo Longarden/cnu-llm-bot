@@ -47,8 +47,9 @@ def _clean_answer(answer: str) -> str:
     answer = _strip_foreign_lines(answer)
     # 인라인 [참고자료 N] / 참고자료 N 토큰 제거
     answer = re.sub(r"\[?\s*참고자료\s*\d+\s*\]?", "", answer)
-    # 첫 출처 마커(출처: 또는 [출처)부터 끝까지 잘라냄 (모델이 붙인 출처 꼬리 제거)
-    answer = re.split(r"\n?\s*(?:출처\s*[:：]|\[출처)", answer, maxsplit=1)[0]
+    # 첫 출처 마커부터 끝까지 잘라냄 (모델이 붙인 출처 꼬리 제거 → 우리가 깨끗한 출처 1줄 재부착).
+    # **출처**: / ##출처 / 출처: / [출처 등 마크다운으로 감싼 형태도 모두 잡는다(중복 방지).
+    answer = re.split(r"\n?\s*(?:[#*\s]*출처[#*\s]*[:：]|\[출처|##+\s*출처)", answer, maxsplit=1)[0]
     # 잔재 메타 줄(업데이트/유효기간/마지막 업데이트/날짜:) 제거
     kept = []
     for ln in answer.split("\n"):
