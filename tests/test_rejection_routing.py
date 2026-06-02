@@ -96,6 +96,23 @@ def test_soft_route_no_hint_passthrough():
     assert _soft_route_by_category(docs, None) == docs
 
 
+# ── stale 소프트 처리(거절 대신 기준일 단서) ──────────────────────
+def test_stale_not_rejected_gives_caveat():
+    chunks = [{"dense_score": 0.6, "sparse_score": 0.0, "valid_until": "2020-01-01"}]
+    r = check_rejection("비교과 프로그램 공지 있어?", chunks)
+    assert not r.rejected, "만료돼도 거절 말고 정보+기준일로 답해야 함"
+    assert r.caveat and "2020-01-01" in r.caveat
+
+
+# ── 출처 마크다운 중복 컷(_clean_answer) ──────────────────────────
+def test_clean_answer_cuts_markdown_source():
+    from interface.answer_questions import _clean_answer
+    a = "졸업 학점은 130학점입니다.\n\n**출처**: [링크](http://x)"
+    out = _clean_answer(a)
+    assert "130학점" in out
+    assert "출처" not in out  # 모델이 쓴 출처 꼬리는 제거(우리가 깨끗한 1줄 재부착)
+
+
 # ── 학부 우선 필터(_deprioritize_grad) ────────────────────────────
 def test_deprioritize_grad_moves_grad_to_back():
     from interface.answer_questions import _deprioritize_grad

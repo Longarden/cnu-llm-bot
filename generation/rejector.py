@@ -63,17 +63,31 @@ def _is_stale(chunk: dict) -> bool:
         return False
 
 
+# 만료(stale) 데이터 처리: 기본은 '거절하지 않고 가진 정보로 답하되 기준일 단서 부착'.
+# (챗봇은 '유효기간 지남'으로 끊기보다, 오래됐어도 정보를 주고 기준일을 밝히는 게 나음)
+# REJECT_STALE=1 이면 옛 동작(만료 시 거절)으로 복귀.
+REJECT_STALE = os.environ.get("REJECT_STALE", "0") == "1"
+
+
 def _stale_result(chunk: dict) -> "RejectionResult":
-    """최상위 청크 만료(stale) 거절 결과."""
-    logger.info("거절: 최상위 청크 만료(stale)")
+    """최상위 청크 만료(stale) 처리. 기본=거절않고 캐비엇, REJECT_STALE=1=거절."""
     valid_until = chunk.get("valid_until", "알 수 없음")
+    if REJECT_STALE:
+        logger.info("거절: 최상위 청크 만료(stale)")
+        return RejectionResult(
+            rejected=True, reason="stale", grade="incorrect",
+            message=(
+                f"해당 정보의 유효 기간({valid_until})이 지났습니다.\n"
+                "최신 정보는 충남대학교 공식 홈페이지(www.cnu.ac.kr) 또는 "
+                "해당 부서에 직접 문의해 주세요."
+            ),
+        )
+    # 기본: 거절하지 않고 답하되 기준일 단서를 단다(정보 손실 방지).
+    logger.info(f"stale이지만 거절 않고 기준일 단서 부착(valid_until={valid_until})")
     return RejectionResult(
-        rejected=True, reason="stale", grade="incorrect",
-        message=(
-            f"해당 정보의 유효 기간({valid_until})이 지났습니다.\n"
-            "최신 정보는 충남대학교 공식 홈페이지(www.cnu.ac.kr) 또는 "
-            "해당 부서에 직접 문의해 주세요."
-        ),
+        rejected=False, reason="stale_caveat", grade="ambiguous", message="",
+        caveat=(f"이 정보는 {valid_until[:10]} 기준입니다. "
+                "최신 내용은 충남대학교 공식 홈페이지나 해당 부서에서 확인해 주세요."),
     )
 
 
@@ -196,18 +210,8 @@ def check_rejection(
             ),
         )
 
-    # 4. Freshness 기반 거절 (최상위 청크 stale 여부)
+    # 4. Freshness: 최상위 청크가 stale이면 _stale_result(기본=거절않고 기준일 단서)
     if retrieved_chunks and _is_stale(retrieved_chunks[0]):
-        logger.info("거절: 최상위 청크 만료(stale)")
-        valid_until = retrieved_chunks[0].get("valid_until", "알 수 없음")
-        return RejectionResult(
-            rejected=True,
-            reason="stale",
-            message=(
-                f"해당 정보의 유효 기간({valid_until})이 지났습니다.\n"
-                "최신 정보는 충남대학교 공식 홈페이지(www.cnu.ac.kr) 또는 "
-                "해당 부서에 직접 문의해 주세요."
-            ),
-        )
+        return _stale_result(retrieved_chunks[0])
 
     return RejectionResult(rejected=False, reason="", message="")
