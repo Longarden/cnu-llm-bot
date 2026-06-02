@@ -19,15 +19,21 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# 환경변수로 모델 지정 가능. 결정(2026-06-02): 답변생성=Qwen2.5-7B-Instruct(표준) + bitsandbytes 4bit.
-# 이유: torch 2.5.1(과제고정) → transformers 4.48 이하 필요(bge-m3 .bin 로드 CVE 회피).
-#   AWQ 경로(autoawq)는 transformers 4.51을 기대해 4.48에서 transformers.models.qwen3
-#   import 에러로 깨짐. 표준 Qwen2.5-7B(네이티브 지원) + bitsandbytes 4bit가 4.48/torch2.5.1에서
-#   안정적이고 T4에 ~5GB로 적재됨. _build_pipeline이 AWQ가 아니면 자동 4bit 로드.
+# 환경변수로 모델 지정 가능. 결정(2026-06-02): 답변생성=EXAONE-3.5-2.4B-Instruct + bitsandbytes 4bit.
+# 이유: EXAONE은 한국어 네이티브라 중국어 코드스위칭이 없음(Qwen의 유일한 약점 해소).
+#   단 EXAONE 최신 remote code는 transformers 4.49+(RopeParameters)를 요구해 4.48(torch2.5.1 조건)에서
+#   깨지므로, RopeParameters 이전 '초기 릴리스 리비전'을 핀해서 4.48에서 로드(가중치는 최신과 동일,
+#   config만 옛 버전). 2.4B는 검증 완료(16문항 한국어 정상). 7.8B는 MODEL_PRIMARY_NAME 으로 업그레이드.
 MODEL_PRIMARY = os.environ.get("MODEL_PRIMARY_NAME",
-                               "Qwen/Qwen2.5-7B-Instruct")
+                               "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct")
 MODEL_EXAONE_78B_AWQ = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ"  # 참고용(torch>=2.6 환경 전용)
-MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "Qwen/Qwen2.5-3B-Instruct")
+MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "Qwen/Qwen2.5-7B-Instruct")
+
+# EXAONE 안전 리비전(2024-12-09 초기 릴리스, RopeParameters 추가 전). MODEL_REVISION 미지정 시 자동 적용.
+EXAONE_SAFE_REVISIONS = {
+    "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct": "8e6fc27",
+    "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct": "496aef0",
+}
 
 _llm_pipeline = None
 
@@ -67,7 +73,7 @@ def load_llm(model_name: Optional[str] = None) -> object:
         # MODEL_REVISION: 특정 커밋 고정용. EXAONE처럼 최신 remote code가 transformers 4.49+를
         # 요구해 깨질 때, RopeParameters 이전 옛 리비전(예: EXAONE-3.5-2.4B 8e6fc27, 2024-12-09)을
         # 박으면 transformers 4.48(torch 2.5.1 조건)에서도 로드 가능.
-        revision = os.environ.get("MODEL_REVISION", "").strip() or None
+        revision = os.environ.get("MODEL_REVISION", "").strip() or EXAONE_SAFE_REVISIONS.get(name)
         tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=True, revision=revision)
         device_map = "auto" if torch.cuda.is_available() else "cpu"
         load_kwargs = dict(
