@@ -3,6 +3,24 @@ from datetime import datetime
 from typing import Any
 
 
+def fetch_with_retry(url: str, headers: dict | None = None, timeout: int = 20, retries: int = 1):
+    """GET + 재시도(기본 1회). 모두 실패하면 마지막 예외를 던진다.
+
+    plus.cnu 등 느린 서버에서 단발 ReadTimeout으로 라이브 크롤이 폴백되는 것을 줄인다.
+    (결정: 중간 타임아웃 20초 + 재시도 1회 + 실패 시 상위에서 정적 폴백)
+    """
+    import requests
+    last = None
+    for attempt in range(retries + 1):
+        try:
+            r = requests.get(url, timeout=timeout, headers=headers or {})
+            r.raise_for_status()
+            return r
+        except Exception as e:
+            last = e
+    raise last
+
+
 class BaseCrawler(ABC):
     """모든 카테고리 크롤러의 추상 기본 클래스.
 

@@ -34,8 +34,8 @@ class NoticesCrawler(BaseCrawler):
         seen_links = set()
         for url, base in self.NOTICE_SOURCES:
             try:
-                # fetch_html: 인코딩 자동보정해서 목록 HTML 가져옴
-                html = fetch_html(url, timeout=10)
+                # fetch_html: 인코딩 자동보정해서 목록 HTML 가져옴 (느린 plus.cnu 대비 20초)
+                html = fetch_html(url, timeout=20)
                 soup = BeautifulSoup(html, "html.parser")
             except Exception as e:
                 print(f"[notices] {url} 목록 실패: {e}")
@@ -56,7 +56,7 @@ class NoticesCrawler(BaseCrawler):
                 date_tag = row.select_one("td.date, .date, td:last-child")
                 date_str = date_tag.get_text(strip=True) if date_tag else now[:10]
                 # 상세페이지 본문 추출(trafilatura). 실패 시 제목만.
-                body = fetch_body(link, timeout=10)
+                body = fetch_body(link, timeout=15)
                 content = f"{title}\n\n{body}" if body else title
                 items.append(self._make_doc(
                     title=title,

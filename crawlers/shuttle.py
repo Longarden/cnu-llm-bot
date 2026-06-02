@@ -17,8 +17,8 @@ class ShuttleCrawler(BaseCrawler):
         valid = (datetime.utcnow() + timedelta(days=90)).isoformat()
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
-        resp = requests.get(self.BASE_URL, timeout=15, headers=headers)
-        resp.raise_for_status()
+        from .base import fetch_with_retry
+        resp = fetch_with_retry(self.BASE_URL, headers=headers, timeout=20, retries=1)
         soup = BeautifulSoup(resp.content, "html.parser")
 
         items = []

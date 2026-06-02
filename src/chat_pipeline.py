@@ -124,7 +124,7 @@ def _try_realtime(question: str, label: int):
         docs = _live_crawl(label)
         if not docs:
             return None
-        chunks = _docs_to_chunks(docs)
+        chunks = _docs_to_chunks(docs, question)
         if not chunks:
             return None
         ans = _generate_from_live(question, chunks)
