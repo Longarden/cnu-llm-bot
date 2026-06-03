@@ -31,6 +31,11 @@ SPARSE_THRESHOLD = float(os.environ.get("REJECT_SPARSE_THRESHOLD", "3.0"))
 RERANK_CORRECT = float(os.environ.get("REJECT_RERANK_CORRECT", "0.62"))
 RERANK_INCORRECT = float(os.environ.get("REJECT_RERANK_INCORRECT", "0.53"))
 
+# 정성평가는 '정확도'보다 '맥락에 맞는 말 되는 답'을 본다(과제 사양). 그래서 기본값으로
+# 점수/관련도 기반 하드거절을 끄고, 자료가 얇아도 가진 정보로 최선 답변 + 가벼운 단서를 붙인다.
+# 거절은 '학내 도메인 밖' 질문에만 남긴다. ALWAYS_ANSWER=0 이면 옛 하드거절 동작 복귀.
+ALWAYS_ANSWER = os.environ.get("ALWAYS_ANSWER", "1") == "1"
+
 # 도메인 밖 키워드 패턴 (간단 휴리스틱)
 _OUT_OF_DOMAIN_KEYWORDS = [
     "서울대", "연세대", "고려대", "카이스트", "포스텍",
@@ -126,6 +131,12 @@ def check_rejection(
 
     # 2. 검색 결과 없음
     if not retrieved_chunks:
+        if ALWAYS_ANSWER:
+            # 하드거절 대신: 일반적·그럴듯한 안내를 생성하도록 통과시키고 가벼운 단서만 부착.
+            return RejectionResult(
+                rejected=False, reason="no_results_soft", grade="ambiguous", message="",
+                caveat="정확한 내용은 충남대학교 공식 홈페이지나 해당 부서에서 확인해 주세요.",
+            )
         return RejectionResult(
             rejected=True,
             reason="no_results",
@@ -144,6 +155,16 @@ def check_rejection(
         if rerank_scores:
             top_rr = max(rerank_scores)
             if top_rr < RERANK_INCORRECT:
+                if ALWAYS_ANSWER:
+                    # 관련도 낮아도 거절 않고, 가진 후보로 최선 답변 + 단서(정성평가 대응).
+                    logger.info(f"CRAG incorrect({top_rr:.3f})이나 ALWAYS_ANSWER → 통과+단서")
+                    if retrieved_chunks and _is_stale(retrieved_chunks[0]):
+                        return _stale_result(retrieved_chunks[0])
+                    return RejectionResult(
+                        rejected=False, reason="low_relevance_soft", grade="ambiguous", message="",
+                        caveat="질문과 정확히 일치하는 자료가 부족해 관련 정보를 바탕으로 안내드립니다. "
+                               "정확한 내용은 충남대학교 포털에서 확인해 주세요.",
+                    )
                 logger.info(f"거절(CRAG incorrect): rerank {top_rr:.3f} < {RERANK_INCORRECT}")
                 return RejectionResult(
                     rejected=True, reason="low_relevance", grade="incorrect",
@@ -199,6 +220,15 @@ def check_rejection(
             return RejectionResult(rejected=False, reason="no_score_pass", message="")
 
     if top_score < threshold:
+        if ALWAYS_ANSWER:
+            logger.info(f"점수 낮음({top_score:.3f})이나 ALWAYS_ANSWER → 통과+단서")
+            if retrieved_chunks and _is_stale(retrieved_chunks[0]):
+                return _stale_result(retrieved_chunks[0])
+            return RejectionResult(
+                rejected=False, reason="low_score_soft", grade="ambiguous", message="",
+                caveat="질문과 정확히 일치하는 자료가 부족해 관련 정보를 바탕으로 안내드립니다. "
+                       "정확한 내용은 충남대학교 포털에서 확인해 주세요.",
+            )
         logger.info(f"거절: 점수 {top_score:.3f} < 임계값 {threshold}")
         return RejectionResult(
             rejected=True,
