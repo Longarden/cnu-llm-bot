@@ -31,14 +31,17 @@ export CRAWL_RETRIES="${CRAWL_RETRIES:-0}"
 
 # 주의: JSON 생성 단계가 실패해도(예: 일시적 크롤 실패) UI는 반드시 뜨도록 비차단(set -e 미사용).
 
-# (1) Task2 배치 추론: data/test_chat.json → outputs/chat_output.json [{"user","model"}]
-echo "[chatbot.sh] (1) Task2 배치 추론 → outputs/chat_output.json"
-python src/gen_chat_output.py || echo "[chatbot.sh] (1) 경고: chat_output 생성 중 오류(계속 진행)"
-
-# (2) Task3 실시간반영: data/test_realtime.json → outputs/realtime_output.json [{"user","model"}]
-#     셔틀/식단/공지를 라이브 크롤해 최신 정보로 답변. 네트워크 실패 시 폴백 메시지로 채움.
-echo "[chatbot.sh] (2) Task3 실시간반영 → outputs/realtime_output.json"
-python src/realtime_model.py || echo "[chatbot.sh] (2) 경고: realtime_output 생성 중 오류(계속 진행)"
+# (1)(2) Task2/Task3 배치 추론 → outputs/*.json.
+#   보통 노트북에서 미리 생성하므로, 이미 있으면 '건너뛰고 UI를 바로' 띄운다(시연 빠름).
+#   채점 안전장치: JSON 이 없을 때만 생성. 항상 새로 만들려면 FORCE_BATCH=1 bash chatbot.sh.
+if [ "${FORCE_BATCH:-0}" = "1" ] || [ ! -s outputs/chat_output.json ] || [ ! -s outputs/realtime_output.json ]; then
+    echo "[chatbot.sh] (1) Task2 배치 추론 → outputs/chat_output.json"
+    python src/gen_chat_output.py || echo "[chatbot.sh] (1) 경고: chat_output 생성 중 오류(계속 진행)"
+    echo "[chatbot.sh] (2) Task3 실시간반영 → outputs/realtime_output.json"
+    python src/realtime_model.py || echo "[chatbot.sh] (2) 경고: realtime_output 생성 중 오류(계속 진행)"
+else
+    echo "[chatbot.sh] outputs/chat_output.json·realtime_output.json 이미 있음 → 배치 생략, UI 바로 실행 (재생성: FORCE_BATCH=1)"
+fi
 
 # (3) 커스텀 FastAPI UI 실행 (분류 라우팅 포함 챗봇).
 #     콜랩: cloudflared 미사용 → 좌측 '포트(Ports)' 탭에서 7860 열기(100초 524 캡 없음).
