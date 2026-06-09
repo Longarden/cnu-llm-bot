@@ -100,8 +100,11 @@ def _live_crawl(label: int) -> list[dict]:
             from crawlers.shuttle import ShuttleCrawler
             crawler = ShuttleCrawler()
         elif label == 1:
+            # 공지: full crawl()은 게시판 6종×글마다 본문(최대 180요청)이라 라이브엔 524 유발.
+            # 경량 crawl_realtime(plus.cnu 목록 2건, 본문 미진입)로 단건 질의를 빠르게 처리.
             from crawlers.notices import NoticesCrawler
             crawler = NoticesCrawler()
+            realtime_method = "crawl_realtime"
         elif label in (0, 2):
             # 졸업요건/학사일정: AcademicCrawler 의 경량 라이브(학사일정 페이지 + 게시판 1p).
             # 풀 crawl()은 게시판 100건이라 단발 질의엔 무거움 → crawl_realtime 사용.
@@ -127,6 +130,16 @@ def _live_crawl(label: int) -> list[dict]:
     # is_fallback 마킹된 더미는 '라이브 성공'으로 오인되면 안 되므로 제거한다.
     # (식단 푸드코트·셔틀 정적표 등 실데이터 폴백은 마킹 없으므로 그대로 유지)
     live = [d for d in (docs or []) if not d.get("is_fallback")]
+    # fan-out: 학사(0)·학사일정(2) 질의는 임시공휴일·일정변경/정정이 '학사 캘린더'보다
+    # '공지'에 먼저 뜨는 경우가 많다(예: 지방선거 임시공휴일 안내). 변경을 놓치지 않게
+    # 공지 경량크롤을 합쳐 검색 재료를 넓힌다. metadata_boost가 변경키워드·최신순으로 정렬.
+    if label in (0, 2):
+        try:
+            from crawlers.notices import NoticesCrawler
+            ndocs = NoticesCrawler().crawl_realtime() or []
+            live += [d for d in ndocs if not d.get("is_fallback")]
+        except Exception as e:
+            print(f"[realtime] 공지 fan-out 실패(label={label}): {e}")
     if not live:
         print(f"[realtime] label={label}: 라이브 0건(더미만) → 상위 폴백")
     return live
