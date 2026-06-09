@@ -1,6 +1,7 @@
 """충남대 학사(수강/졸업/일정) 크롤러 - 실제 크롤 구현."""
 from datetime import datetime, timedelta
 from .base import BaseCrawler
+import os
 import requests
 from bs4 import BeautifulSoup
 import io
@@ -54,14 +55,15 @@ def _download_attachment(url: str) -> bytes | None:
     return None
 
 
-def _fetch_post(ntt_no: str, code: str = BOARD_CODE) -> dict | None:
+def _fetch_post(ntt_no: str, code: str = BOARD_CODE, timeout: int = TIMEOUT) -> dict | None:
     """상세 게시물 -> 본문(trafilatura). 본문 없으면 None('게시물 NNNN' 쓰레기 방지)."""
     url = f"{BASE_URL}/_prog/_board/?code={code}&mode=V&no={ntt_no}"
     from crawler_pipeline.body_extractor import fetch_post
-    return fetch_post(url, timeout=TIMEOUT)
+    return fetch_post(url, timeout=timeout)
 
 
-def _fetch_board_nos(code: str = BOARD_CODE, menu_dvs_cd: str = "07020101", pages: int = 3) -> list[str]:
+def _fetch_board_nos(code: str = BOARD_CODE, menu_dvs_cd: str = "07020101", pages: int = 3,
+                     timeout: int = TIMEOUT) -> list[str]:
     """게시판 목록에서 게시물 번호 수집."""
     nos = []
     for page in range(1, pages + 1):
@@ -70,7 +72,7 @@ def _fetch_board_nos(code: str = BOARD_CODE, menu_dvs_cd: str = "07020101", page
             f"&site_dvs_cd=kr&menu_dvs_cd={menu_dvs_cd}&page={page}"
         )
         try:
-            r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+            r = requests.get(url, headers=HEADERS, timeout=timeout)
             r.raise_for_status()
             r.encoding = "utf-8"
             soup = BeautifulSoup(r.text, "html.parser")
@@ -205,13 +207,18 @@ class AcademicCrawler(BaseCrawler):
             "date": now[:10],
         }
 
-    def crawl_realtime(self, max_posts: int = 5) -> list[dict]:
+    def crawl_realtime(self, max_posts: int = 3) -> list[dict]:
         """라이브용 경량 크롤(채점 시점 단발 질문 응답용).
 
         풀 crawl()은 게시판 100건이라 단발 질의엔 무겁다. 여기서는
         (1) 학사일정 페이지(라이브) + (2) 학사 게시판 1페이지 최신글 일부만 긁어
-        '이번에 바뀐 학사일정/졸업·수강 변경'에 빠르게 답한다(약 7요청). 실패 시 빈 리스트.
+        '이번에 바뀐 학사일정/졸업·수강 변경'에 빠르게 답한다. 실패 시 빈 리스트.
+
+        [524 방지] 풀 crawl()용 TIMEOUT(30초)이 아니라 라이브 전용 CRAWL_TIMEOUT(기본 10초)을
+        쓰고 max_posts=3 으로 제한 → 최악 (1+1+3)×10≈50초. 상위(chat_answer)의 공지 fan-out과
+        합쳐도 100초 터널 한도 안에 들어온다.
         """
+        rt = int(os.environ.get("CRAWL_TIMEOUT", "10"))
         now = datetime.utcnow().isoformat()
         valid = (datetime.utcnow() + timedelta(days=1)).isoformat()
         docs = []
@@ -219,7 +226,7 @@ class AcademicCrawler(BaseCrawler):
         # (1) 학사일정 페이지(라이브)
         try:
             cal_url = f"{BASE_URL}/_prog/academic_calendar/?site_dvs_cd=kr&menu_dvs_cd=05020101"
-            r = requests.get(cal_url, headers=HEADERS, timeout=TIMEOUT)
+            r = requests.get(cal_url, headers=HEADERS, timeout=rt)
             r.encoding = "utf-8"
             soup = BeautifulSoup(r.text, "html.parser")
             cal_text = soup.get_text(separator="\n", strip=True)
@@ -233,9 +240,9 @@ class AcademicCrawler(BaseCrawler):
 
         # (2) 학사 게시판 최신글 일부(졸업/수강 변경 공지 등) — 1페이지, 상위 max_posts건만
         try:
-            nos = _fetch_board_nos(BOARD_CODE, "07020101", pages=1)
+            nos = _fetch_board_nos(BOARD_CODE, "07020101", pages=1, timeout=rt)
             for ntt_no in nos[:max_posts]:
-                post = _fetch_post(ntt_no, BOARD_CODE)
+                post = _fetch_post(ntt_no, BOARD_CODE, timeout=rt)
                 if post and post["text"].strip():
                     docs.append(self._make_doc(
                         title=post["title"], content=post["text"],
