@@ -224,7 +224,8 @@ def _generate_from_live(question: str, chunks: list[dict]) -> str:
     try:
         from generation.llm import generate
         from interface.answer_questions import _clean_answer
-        answer = generate(full_prompt, system_prompt=SYSTEM_PROMPT)
+        # SYSTEM_PROMPT 는 generate 내부에서 system 메시지 + few-shot 으로 처리 → user_prompt 만 전달.
+        answer = generate(user_prompt, system_prompt=SYSTEM_PROMPT)
         answer = _clean_answer(answer)
     except Exception as e:
         print(f"[realtime] 생성 실패({e}) → 스텁 요약 폴백")
