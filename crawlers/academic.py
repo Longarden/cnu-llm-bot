@@ -238,11 +238,16 @@ class AcademicCrawler(BaseCrawler):
         except Exception as e:
             logger.warning("학사일정 실시간 크롤 실패: %s", e)
 
-        # (2) 학사 게시판 최신글 일부(졸업/수강 변경 공지 등) — 1페이지, 상위 max_posts건만
+        # (2) 학사 게시판 최신글 일부(졸업/수강 변경 공지 등) — 1페이지, 상위 max_posts건만.
+        # 본문 N건을 '병렬'로 받아 체인 길이를 sum→max 로 줄인다(524 방지: 3×10초→~10초).
         try:
-            nos = _fetch_board_nos(BOARD_CODE, "07020101", pages=1, timeout=rt)
-            for ntt_no in nos[:max_posts]:
-                post = _fetch_post(ntt_no, BOARD_CODE, timeout=rt)
+            from concurrent.futures import ThreadPoolExecutor
+            nos = _fetch_board_nos(BOARD_CODE, "07020101", pages=1, timeout=rt)[:max_posts]
+            posts = []
+            if nos:
+                with ThreadPoolExecutor(max_workers=min(len(nos), 4)) as ex:
+                    posts = list(ex.map(lambda n: _fetch_post(n, BOARD_CODE, timeout=rt), nos))
+            for post in posts:
                 if post and post["text"].strip():
                     docs.append(self._make_doc(
                         title=post["title"], content=post["text"],

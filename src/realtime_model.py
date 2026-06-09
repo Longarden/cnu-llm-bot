@@ -22,6 +22,7 @@
 실행: python src/realtime_model.py
 """
 import os
+import re
 import sys
 import json
 from pathlib import Path
@@ -84,12 +85,21 @@ def _safe_label(question: str) -> int:
         return -1
 
 
-def _live_crawl(label: int) -> list[dict]:
+# 질의가 '변동/최신'을 명시 요구하는 신호(이때만 학사→공지 fan-out 추가 크롤).
+_CHANGE_INTENT_RE = re.compile(
+    r"(변동|변경|바뀐|바뀌|달라진|새로|신규|추가|갱신|업데이트|업뎃|이후|최신|최근|임시공휴일|공휴일|휴강|연기|정정|취소)"
+)
+
+
+def _live_crawl(label: int, question: str = "") -> list[dict]:
     """label 에 해당하는 실시간 소스를 라이브 크롤. 실패/해당없음 시 빈 리스트.
 
     crawlers/*.py 의 기존 크롤러를 재사용한다. safe_crawl() 은 사이트 접속 실패 시
     크롤러 내부 정적 폴백(_fallback/_static_fallback)으로 떨어지므로,
     여기서는 crawl() 을 직접 호출해 '라이브 성공'과 '폴백'을 구분한다.
+
+    question 이 '변동/최신'을 명시할 때만 학사(0/2)→공지 fan-out 을 추가한다(524 방지:
+    평상 학사질의까지 공지를 더 긁으면 크롤 체인이 100초 터널 한도를 넘긴다).
     """
     realtime_method = "crawl"
     try:
@@ -133,7 +143,7 @@ def _live_crawl(label: int) -> list[dict]:
     # fan-out: 학사(0)·학사일정(2) 질의는 임시공휴일·일정변경/정정이 '학사 캘린더'보다
     # '공지'에 먼저 뜨는 경우가 많다(예: 지방선거 임시공휴일 안내). 변경을 놓치지 않게
     # 공지 경량크롤을 합쳐 검색 재료를 넓힌다. metadata_boost가 변경키워드·최신순으로 정렬.
-    if label in (0, 2):
+    if label in (0, 2) and _CHANGE_INTENT_RE.search(question or ""):
         try:
             from crawlers.notices import NoticesCrawler
             ndocs = NoticesCrawler().crawl_realtime() or []
@@ -255,7 +265,7 @@ def answer_realtime(question: str) -> str:
     if label in _LIVE_LABELS:
         kind = _LIVE_LABELS[label]
         print(f"[realtime] label={label}({kind}) → 라이브 크롤")
-        docs = _live_crawl(label)
+        docs = _live_crawl(label, question)
         if not docs:
             return _CRAWL_FAIL_MSG
         chunks = _docs_to_chunks(docs, question)
