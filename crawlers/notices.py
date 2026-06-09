@@ -147,7 +147,9 @@ class NoticesCrawler(BaseCrawler):
         """
         from urllib.parse import urljoin
         from crawler_pipeline.body_extractor import fetch_html
-        timeout = int(os.environ.get("CRAWL_TIMEOUT", "12"))
+        # (connect, read) 분리: 죽은 호스트는 4초에 포기, 느린 plus.cnu는 read 까지 대기.
+        timeout = (float(os.environ.get("CRAWL_CONNECT_TIMEOUT", "4")),
+                   float(os.environ.get("CRAWL_TIMEOUT", "15")))
         now = datetime.utcnow().isoformat()
         today = now[:10]
         valid = (datetime.utcnow() + timedelta(days=1)).isoformat()

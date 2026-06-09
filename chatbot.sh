@@ -24,9 +24,10 @@ export RERANK="${RERANK:-1}"
 export MODEL_PRIMARY_NAME="${MODEL_PRIMARY_NAME:-LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct}"
 # CUDA 단편화 방지(에러 메시지 권장값). reserved-but-unallocated 조각으로 인한 OOM 완화.
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
-# 라이브 크롤 타임아웃 짧게: 느리거나 죽은 학과서버 한 곳이 100초 터널 한도를 먹어 524 내는 것 방지.
-# (느린 서버는 8초에 포기하고 정적 폴백 → 524 대신 즉시 답). 학과 공지서버가 자주 느림.
-export CRAWL_TIMEOUT="${CRAWL_TIMEOUT:-12}"
+# 라이브 크롤 타임아웃: (connect, read) 분리(requests 모범사례). 죽은/접속불가 호스트는 connect 4초에
+# 빨리 포기하고, 살아있지만 느린 서버(plus.cnu 등)는 read 15초까지 기다림. retries 0 = 즉시 정적 폴백.
+export CRAWL_CONNECT_TIMEOUT="${CRAWL_CONNECT_TIMEOUT:-4}"
+export CRAWL_TIMEOUT="${CRAWL_TIMEOUT:-15}"
 export CRAWL_RETRIES="${CRAWL_RETRIES:-0}"
 
 # Task2/Task3 배치(outputs/*.json)는 노트북(ipynb)에서 미리 생성하므로 여기서는 만들지 않고

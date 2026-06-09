@@ -15,7 +15,11 @@ def fetch_with_retry(url: str, headers: dict | None = None,
     """
     import requests
     if timeout is None:
-        timeout = int(os.environ.get("CRAWL_TIMEOUT", "12"))
+        # (connect, read) 분리(requests 모범사례): 죽은/접속불가 호스트는 connect 단계에서 빨리 포기,
+        # 살아있지만 느린 서버(plus.cnu 등)는 read 까지 기다린다. 단일값보다 헛대기를 줄임.
+        connect_t = float(os.environ.get("CRAWL_CONNECT_TIMEOUT", "4"))
+        read_t = float(os.environ.get("CRAWL_TIMEOUT", "15"))
+        timeout = (connect_t, read_t)
     if retries is None:
         retries = int(os.environ.get("CRAWL_RETRIES", "0"))
     last = None
