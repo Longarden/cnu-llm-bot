@@ -23,7 +23,7 @@ drive.mount('/content/drive')
 # [셀 4] Task1 분류 산출물
 !python src/classifier.py
 
-# [셀 5] Task2 챗봇 산출물 (Qwen2.5-7B + bitsandbytes 4bit, 첫 실행 시 모델 다운로드 ~2분)
+# [셀 5] Task2 챗봇 산출물 (EXAONE-3.5-7.8B-Instruct + bitsandbytes 4bit, 첫 실행 시 모델 다운로드 ~2분)
 !python src/gen_chat_output.py
 
 # [셀 6] Task3 실시간 산출물
@@ -50,9 +50,10 @@ A의 셀3 대신:
 
 ## 오늘 밤 바뀐 것 (왜 이전에 막혔나)
 
-1. 생성모델: EXAONE-AWQ -> Qwen2.5-7B-Instruct + bitsandbytes 4bit.
-   - autoawq가 transformers 4.51을 기대해 4.48에서 transformers.models.qwen3 import로 죽던 문제 제거.
-   - 표준 Qwen2(네이티브 지원) + 4bit라 torch2.5.1/transformers4.48에서 안정. T4 ~5GB.
+1. 생성모델: EXAONE-AWQ -> EXAONE-3.5-7.8B-Instruct(비-AWQ) + bitsandbytes 4bit(nf4).
+   - autoawq가 transformers 4.51을 기대해 4.48에서 import로 죽던 문제 제거(AWQ 경로 회피).
+   - 표준 모델 + bnb 4bit라 torch2.5.1/transformers4.48에서 안정. T4 ~5~6GB.
+   - EXAONE은 한국어 네이티브라 중국어 코드스위칭이 없음. RopeParameters 이전 안전 리비전 자동 핀.
 2. 식단/셔틀 거절 해소: chat_answer가 식단(3)/셔틀(4)은 realtime 라이브 크롤로 답함.
    - 정적 코퍼스가 얇아서(식단9·셔틀11건) 거절되던 구조. 라이브 우선 + 정적 폴백.
    - 끄려면 CHAT_REALTIME=0.
@@ -62,7 +63,7 @@ A의 셀3 대신:
 
 ## 확인 포인트
 
-- 셀5 chat_output.json: "생성 오류"(qwen3) 사라지고, 식단/셔틀이 "자료없음" 대신 라이브 답.
+- 셀5 chat_output.json: "생성 오류"(AWQ/qwen3 import) 사라지고, 식단/셔틀이 "자료없음" 대신 라이브 답.
 - 셀5 로그에 `[hybrid_retriever] dense 검색 실패` 없어야 함.
 - 셀6 realtime_output.json: 식단/셔틀/공지 오늘자 라이브 데이터.
 

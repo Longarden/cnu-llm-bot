@@ -1,0 +1,6 @@
+﻿
+worker_dept	PID=7512
+worker_regulations	PID=46108
+worker_admission	PID=27496
+worker_life	PID=26844
+planner	PID=17304

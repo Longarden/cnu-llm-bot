@@ -59,8 +59,8 @@ _SAMPLE_QUESTIONS = [
     "가장 최근에 올라온 공지사항은 언제 게시되었나요?",
 ]
 
-# label → 실시간 크롤러 (식단/셔틀/공지만 라이브 소스 보유)
-_LIVE_LABELS = {1: "공지", 3: "식단", 4: "셔틀"}
+# label → 실시간 크롤러. 졸업요건/학사일정도 AcademicCrawler(경량 crawl_realtime)로 라이브 가능.
+_LIVE_LABELS = {0: "졸업요건", 1: "공지", 2: "학사일정", 3: "식단", 4: "셔틀"}
 
 
 def ensure_test_file():
@@ -91,6 +91,7 @@ def _live_crawl(label: int) -> list[dict]:
     크롤러 내부 정적 폴백(_fallback/_static_fallback)으로 떨어지므로,
     여기서는 crawl() 을 직접 호출해 '라이브 성공'과 '폴백'을 구분한다.
     """
+    realtime_method = "crawl"
     try:
         if label == 3:
             from crawlers.dining import DiningCrawler
@@ -101,6 +102,12 @@ def _live_crawl(label: int) -> list[dict]:
         elif label == 1:
             from crawlers.notices import NoticesCrawler
             crawler = NoticesCrawler()
+        elif label in (0, 2):
+            # 졸업요건/학사일정: AcademicCrawler 의 경량 라이브(학사일정 페이지 + 게시판 1p).
+            # 풀 crawl()은 게시판 100건이라 단발 질의엔 무거움 → crawl_realtime 사용.
+            from crawlers.academic import AcademicCrawler
+            crawler = AcademicCrawler()
+            realtime_method = "crawl_realtime"
         else:
             return []
     except Exception as e:
@@ -108,7 +115,7 @@ def _live_crawl(label: int) -> list[dict]:
         return []
 
     try:
-        docs = crawler.crawl()  # 라이브 시도(네트워크). 실패하면 예외 또는 내부 폴백.
+        docs = getattr(crawler, realtime_method)()  # 라이브 시도(네트워크). 실패하면 예외 또는 내부 폴백.
     except Exception as e:
         print(f"[realtime] 라이브 크롤 실패(label={label}): {e} → safe_crawl 폴백 시도")
         try:
