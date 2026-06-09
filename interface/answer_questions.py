@@ -211,7 +211,7 @@ def _rag_answer(
             "valid_until": meta.get("valid_until", ""),
         })
         url = meta.get("source_url", "")
-        if url:
+        if url and url not in sources:  # 같은 URL 중복 부착 방지(출처: a, a, a → a)
             sources.append(url)
 
     user_prompt = build_user_prompt(question, chunks_for_prompt)
