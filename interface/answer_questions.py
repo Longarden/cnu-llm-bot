@@ -16,7 +16,7 @@ from typing import Optional
 _SOURCE_PATTERN = re.compile(r"출처\s*:")
 
 
-# 한글/중국어(한자) 판별용. Qwen이 가끔 중국어로 코드스위칭하는데 프롬프트 지시만으론
+# 한글/중국어(한자) 판별용. 일부 LLM이 가끔 중국어로 코드스위칭하는데 프롬프트 지시만으론
 # 완전히 막히지 않아, 생성 후처리로 '중국어로 보이는 줄'(한자 다수 + 한글 0)을 결정론적 제거.
 _HANGUL_RE = re.compile(r"[가-힣]")
 _CJK_RE = re.compile(r"[一-鿿]")

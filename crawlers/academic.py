@@ -167,6 +167,48 @@ class AcademicCrawler(BaseCrawler):
         logger.info("academic 크롤 완료: %d 건", len(docs))
         return docs
 
+    def crawl_realtime(self, max_posts: int = 5) -> list[dict]:
+        """라이브용 경량 크롤(채점 시점 단발 질문 응답용).
+
+        풀 crawl()은 게시판 100건이라 단발 질의엔 무겁다. 여기서는
+        (1) 학사일정 페이지(라이브) + (2) 학사 게시판 1페이지 최신글 일부만 긁어
+        '이번에 바뀐 학사일정/졸업·수강 변경'에 빠르게 답한다(약 7요청). 실패 시 빈 리스트.
+        """
+        now = datetime.utcnow().isoformat()
+        valid = (datetime.utcnow() + timedelta(days=1)).isoformat()
+        docs = []
+
+        # (1) 학사일정 페이지(라이브)
+        try:
+            cal_url = f"{BASE_URL}/_prog/academic_calendar/?site_dvs_cd=kr&menu_dvs_cd=05020101"
+            r = requests.get(cal_url, headers=HEADERS, timeout=TIMEOUT)
+            r.encoding = "utf-8"
+            soup = BeautifulSoup(r.text, "html.parser")
+            cal_text = soup.get_text(separator="\n", strip=True)
+            if cal_text:
+                docs.append(self._make_doc(
+                    title="학사일정(실시간)", content=cal_text[:3000],
+                    source_url=cal_url, now=now, valid=valid, date=now[:10],
+                ))
+        except Exception as e:
+            logger.warning("학사일정 실시간 크롤 실패: %s", e)
+
+        # (2) 학사 게시판 최신글 일부(졸업/수강 변경 공지 등) — 1페이지, 상위 max_posts건만
+        try:
+            nos = _fetch_board_nos(BOARD_CODE, "07020101", pages=1)
+            for ntt_no in nos[:max_posts]:
+                post = _fetch_post(ntt_no, BOARD_CODE)
+                if post and post["text"].strip():
+                    docs.append(self._make_doc(
+                        title=post["title"], content=post["text"],
+                        source_url=post["url"], now=now, valid=valid,
+                        date=post["date"] or now[:10],
+                    ))
+        except Exception as e:
+            logger.warning("학사 게시판 실시간 크롤 실패: %s", e)
+
+        return docs
+
 
 def crawl() -> list[dict]:
     return AcademicCrawler().crawl()

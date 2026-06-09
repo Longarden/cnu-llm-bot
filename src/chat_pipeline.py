@@ -12,13 +12,14 @@ label → data_category 매핑(명시, 카테고리 '리스트'):
 PDF상 졸업요건은 학과별 전공/교양 요건이라 학과 카테고리 포함, 공지도 학과 공지 포함.
 
 기존 함수 재사용:
-    - 분류기 추론: model/ (klue/bert-base, AutoModelForSequenceClassification)
+    - 분류기 추론: model/ (klue/roberta-base, AutoModelForSequenceClassification)
     - RAG+생성: interface.answer_questions._rag_answer (category_hint 로 소프트 라우팅)
 
 환경: Python 3.10+, torch, transformers. GPU 있으면 GPU, 없으면 CPU 자동.
 완전 로컬(외부 API 금지) — 생성은 generation.llm GEN_BACKEND=local(기본 EXAONE).
 """
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -109,15 +110,51 @@ def route_question(question: str) -> tuple[int, str, list[str]]:
     return label, LABEL_NAMES.get(label, "?"), LABEL_TO_CATEGORY.get(label, [])
 
 
-# 실시간 라이브 크롤이 정적 코퍼스보다 나은 라벨(식단3/셔틀4).
-# 정적 코퍼스가 얇아(식단9·셔틀11건) 정적 RAG는 거의 거절됨 → 라이브 크롤 우선.
-# CHAT_REALTIME=0 으로 끄면 전부 정적 RAG(오프라인/평가 재현용).
-_REALTIME_LABELS = {3, 4}
+# 라이브 크롤러가 존재하는 라벨 = '라이브로 갈 때 어느 소스를 긁을지' 지도.
+#   0 졸업요건·2 학사일정 → AcademicCrawler(경량 crawl_realtime), 1 공지 → Notices, 3 식단 → Dining, 4 셔틀 → Shuttle.
+# 정적 vs 라이브의 '판단'은 라벨이 아니라 콘텐츠 신선도로 한다(chat_answer 참고). CHAT_REALTIME=0 이면 전부 정적.
+_LIVE_CAPABLE = {0, 1, 2, 3, 4}
+
+# 질문이 '최신/실시간'을 명시 요구하는 신호(변동·최신 키워드). + date_extractor 날짜표현 병용.
+_FRESH_RE = re.compile(
+    r"(최신|가장\s*최근|최근|방금|지금|현재|실시간|오늘|내일|모레|이번\s*주|다음\s*주"
+    r"|새로|새롭게|바뀌|바뀐|변경|변동|업데이트|업뎃|갱신"
+    r"|정상\s*운행|운행\s*여부|운행하나|운행\s*하나)"
+)
+
+
+def _needs_fresh(question: str) -> bool:
+    """질문이 '최신/실시간' 정보를 요구하는지(변동·최신 키워드 또는 날짜표현)."""
+    if _FRESH_RE.search(question):
+        return True
+    try:
+        from retrieval.date_extractor import extract_dates
+        return bool(extract_dates(question))
+    except Exception:
+        return False
+
+
+def _static_is_stale(docs) -> bool:
+    """top 검색문서가 '휘발성 정보(freshness_tier=time_sensitive: 식단·공지)'인데
+    valid_until 이 오늘보다 과거(만료)면 stale → 라이브로 갱신 필요.
+    안정/준안정 정보(셔틀 노선·졸업요건 등)는 변하지 않으니 그대로 신뢰(False)."""
+    if not docs:
+        return False
+    from datetime import date
+    today = date.today().isoformat()
+    top = docs[0]
+    meta = top.get("metadata", top) if isinstance(top, dict) else {}
+    tier = meta.get("freshness_tier") or (top.get("freshness_tier", "") if isinstance(top, dict) else "")
+    vu = meta.get("valid_until") or (top.get("valid_until", "") if isinstance(top, dict) else "")
+    if tier == "time_sensitive" and vu:
+        return str(vu) < today  # ISO 사전식 비교 = 시간순
+    return False
 
 
 def _try_realtime(question: str, label: int):
-    """식단/셔틀은 realtime 모듈로 라이브 크롤+생성. 결과 없거나 실패면 None(→정적 폴백)."""
-    if os.environ.get("CHAT_REALTIME", "1") != "1" or label not in _REALTIME_LABELS:
+    """라이브 크롤 소스가 있는 라벨(공지/식단/셔틀)을 realtime 모듈로 라이브 크롤+생성.
+    결과 없거나 실패면 None(→정적 폴백)."""
+    if os.environ.get("CHAT_REALTIME", "1") != "1" or label not in _LIVE_CAPABLE:
         return None
     try:
         from src.realtime_model import _live_crawl, _docs_to_chunks, _generate_from_live, _CRAWL_FAIL_MSG
@@ -136,24 +173,47 @@ def _try_realtime(question: str, label: int):
         return None
 
 
-def chat_answer(question: str, return_meta: bool = False):
-    """챗봇 1턴: 분류 → (식단/셔틀=실시간 크롤 · 그외=소프트 라우팅 RAG) → 생성.
+def _static_answer(question: str, categories):
+    """분류 카테고리로 소프트 라우팅한 정적 RAG. (답변, top_docs, 거절여부) 반환."""
+    from interface.answer_questions import _rag_answer
+    return _rag_answer(
+        question,
+        category_hint=(categories or None),  # 리스트/None — _soft_route_by_category 처리
+        return_context=True,
+    )
 
-    return_meta=True 면 (answer, {"label","label_name","categories"}) 튜플 반환.
+
+def chat_answer(question: str, return_meta: bool = False):
+    """챗봇 1턴: 분류 → 정보 휘발성 판단 라우팅 → 생성.
+
+    라이브 소스가 있는 라벨(공지1·식단3·셔틀4)에서 "변하는 정보만" 라이브로:
+      · 질문이 최신 명시 요구(오늘/다음주/바뀐/정상운행 등) → 라이브 우선.
+      · 평상시 → 정적 RAG 우선. 단 정적이 거절(자료없음) 이거나
+        정적 top 문서가 휘발성(time_sensitive)인데 valid_until 만료(stale)면 라이브로 갱신.
+      → "안 변하는 정보(freshness_tier=static·semi_static, 미만료)"는 정적 그대로 내보냄.
+    라이브 소스 없는 라벨(졸업요건0·학사일정2)·미분류 → 정적 RAG.
+
+    return_meta=True 면 (answer, {label, label_name, categories, fresh, source}) 반환.
     """
     label, label_name, categories = route_question(question)
+    realtime_on = os.environ.get("CHAT_REALTIME", "1") == "1"
+    fresh = _needs_fresh(question)
+    source = "static"
 
-    # 식단/셔틀: 라이브 크롤 우선(정적 코퍼스가 얇아 거절되는 문제 해소)
-    answer = _try_realtime(question, label)
+    # 1) 항상 정적 RAG 먼저 — 캡처해 둔 고정 콘텐츠(pdf/hwp/이미지 등) 우선 + 라이브 실패 대비 폴백 확보.
+    answer, docs, rejected = _static_answer(question, categories)
 
-    # 그 외(또는 라이브 실패): 분류 카테고리로 소프트 라우팅 정적 RAG
-    if answer is None:
-        from interface.answer_questions import _rag_answer
-        answer = _rag_answer(
-            question,
-            category_hint=(categories or None),  # 리스트(또는 None) — _soft_route_by_category 가 처리
-        )
+    # 2) '변하는 정보'일 때만 라이브로 갱신(라벨 무관 · 콘텐츠 신선도 기준):
+    #    질문이 최신 요구(fresh) / 정적 거절 / 정적 top 이 휘발성인데 valid_until 만료(stale).
+    #    라이브 소스가 없는 라벨이면 _try_realtime 이 None → 정적 답변 유지.
+    if realtime_on and (fresh or rejected or _static_is_stale(docs)):
+        live = _try_realtime(question, label)
+        if live is not None:
+            answer, source = live, "live"
 
     if return_meta:
-        return answer, {"label": label, "label_name": label_name, "categories": categories}
+        return answer, {
+            "label": label, "label_name": label_name, "categories": categories,
+            "fresh": fresh, "source": source,
+        }
     return answer

@@ -6,7 +6,7 @@
 
 ## 스택
 
-- LLM: Qwen2.5-7B-Instruct-AWQ (4bit, 5~6GB)
+- LLM: LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct + bitsandbytes 4bit (nf4, 5~6GB)  # generation/llm.py 실제 기본값
 - 임베딩: BAAI/bge-m3 (한국어 강함, 2GB)
 - 벡터 DB: Chroma persistent (1~2GB)
 - 검색: BM25(rank_bm25) + BGE-M3 dense + Reciprocal Rank Fusion (k=60)
@@ -33,7 +33,7 @@
 | crawler_pipeline/ | Crawl4AI 래퍼, Claude Haiku distiller, 중복 제거 |
 | embedding/ | BGE-M3 임베딩, 청킹(400/50), Chroma 벡터 DB |
 | retrieval/ | 한국어 날짜 NER, 카테고리 라우터, 하이브리드 검색, 리랭커 |
-| generation/ | Qwen2.5-7B-AWQ 로드, 시스템 프롬프트, 거절 로직 |
+| generation/ | EXAONE-3.5-7.8B + bitsandbytes 4bit 로드, 시스템 프롬프트, 거절 로직 |
 | question_generation/ | Claude Sonnet으로 1만 질문 생성, KMeans 클러스터 |
 | eval/ | 평가셋 200개 추출, LLM-as-judge, 전체 평가 실행 |
 | interface/ | 교수님 제출 인터페이스(answer_questions), 벤치마크 |
@@ -57,5 +57,5 @@ answer_questions("questions.jsonl", "answers.jsonl")
 | DISTILL | 0 | 1이면 Claude Haiku distillation 활성화 |
 | RERANK | 0 | 1이면 BGE-reranker 활성화 |
 | CACHED | 0 | 1이면 크롤 없이 data/crawled/*.json 캐시 로드 |
-| MODEL_FALLBACK | 7b | 3b이면 Qwen2.5-3B 폴백 |
+| MODEL_FALLBACK | auto | auto=PRIMARY 로드 후 OOM 시만 폴백, 3b=EXAONE-2.4B 강제 폴백, 0=폴백 비활성 |
 | ANTHROPIC_API_KEY | - | Claude API 키 |

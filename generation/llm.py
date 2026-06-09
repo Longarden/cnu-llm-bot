@@ -1,13 +1,12 @@
 """
 답변생성 LLM 로드 모듈.
-PRIMARY: EXAONE-3.5-7.8B-Instruct-AWQ (한국어 특화, W4A16, T4=compute7.5에서 정상).
-         transformers>=4.43, autoawq>=0.2.7.post3 필요 (현 pin 4.44.2 충족).
-T4 OOM 시 Qwen2.5-3B-Instruct 로 자동 폴백.
+PRIMARY: EXAONE-3.5-7.8B-Instruct + bitsandbytes 4bit(nf4) (한국어 특화, T4 16GB서 ~5-6GB).
+T4 OOM 시 EXAONE-3.5-2.4B-Instruct 로 자동 폴백.
 GPU 없는 환경(iGPU/CPU)에서 import만 성공하고 실제 로드는 코랩에서.
 
 환경변수:
   MODEL_PRIMARY_NAME   기본 답변모델 override (기본 EXAONE AWQ)
-  MODEL_FALLBACK_NAME  폴백모델 override (기본 Qwen 3B)
+  MODEL_FALLBACK_NAME  폴백모델 override (기본 EXAONE 2.4B)
   MODEL_FALLBACK=auto  PRIMARY 로드, OOM 시 폴백 (T4 기본 권장)
   MODEL_FALLBACK=3b    폴백모델로 강제 (저사양 GPU)
   MODEL_FALLBACK=0     폴백 비활성화 (OOM 시 예외)
@@ -135,9 +134,9 @@ def load_llm(model_name: Optional[str] = None) -> object:
 
 
 # ── 생성 백엔드 선택 ──────────────────────────────────────────────
-# GEN_BACKEND=api(기본) → Gemini API 우선, 실패/키없음 시 로컬 폴백.
-# GEN_BACKEND=local      → 로컬 EXAONE/Qwen 강제(자작 모델 검증·오프라인용).
-# 과제 PDF: 서버 아키텍처라 외부 API 허용. 성능 우선 = API Pro 기본.
+# GEN_BACKEND=local(기본) → 로컬 EXAONE 강제(완전 로컬·외부 API 금지, 채점 경로).
+# GEN_BACKEND=api         → Gemini API 우선, 실패/키없음 시 로컬 폴백(개발용 옵션).
+# 과제 PDF: 완전 로컬 동작 요구. 기본값 local 로 외부 API 없이 EXAONE 생성.
 GEN_BACKEND = os.environ.get("GEN_BACKEND", "local").lower()
 GEMINI_GEN_MODEL = os.environ.get("GEMINI_GEN_MODEL", "gemini-2.5-pro")    # 답변
 GEMINI_FAST_MODEL = os.environ.get("GEMINI_FAST_MODEL", "gemini-2.5-flash")  # 쿼리변환/검증
@@ -178,7 +177,7 @@ def _gemini_generate(prompt: str, system_prompt: str, model: str) -> str:
 
 
 def _local_generate(prompt: str, system_prompt: str = "") -> str:
-    """로컬 파이프라인(EXAONE/Qwen) 생성. chat template 적용."""
+    """로컬 파이프라인(EXAONE) 생성. chat template 적용."""
     pipe = load_llm()
     messages = []
     if system_prompt:
@@ -222,7 +221,7 @@ def _generate_once(prompt: str, system_prompt: str = "") -> str:
 def generate(prompt: str, system_prompt: str = "") -> str:
     """답변 생성 + 중국어 누출 시 한국어로 1회 재생성.
 
-    Qwen 등이 가끔 중국어로 코드스위칭하는데, 그 줄을 '삭제'하면 거기에만 있던
+    일부 LLM이 가끔 중국어로 코드스위칭하는데, 그 줄을 '삭제'하면 거기에만 있던
     정보가 손실될 수 있다. 그래서 중국어가 감지되면 같은 컨텍스트로 '한국어로만'
     다시 생성해 정보를 보존한다(삭제는 최종 안전망으로 _clean_answer가 담당).
     """

@@ -14,6 +14,8 @@ cd "$ROOT"
 export GEN_BACKEND="${GEN_BACKEND:-local}"
 export CHAT_REALTIME="${CHAT_REALTIME:-1}"
 export GRADIO_SHARE="${GRADIO_SHARE:-1}"
+# 리랭커(CrossEncoder bge-reranker-v2-m3) 켬 = 검색정밀도+CRAG 거절게이트 활성. T4 메모리 빠듯하면 RERANK=0 bash chatbot.sh 로 끌 수 있음.
+export RERANK="${RERANK:-1}"
 
 # 주의: JSON 생성 단계가 실패해도(예: 일시적 크롤 실패) UI는 반드시 뜨도록 비차단(set -e 미사용).
 

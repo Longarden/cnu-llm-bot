@@ -74,9 +74,9 @@ def run_evaluation(
         if (i + 1) % 20 == 0:
             print(f"  진행: {i+1}/{len(testset)}")
 
-        # API 속도 제한
+        # API 속도 제한 (Gemini 2.0 Flash 무료 한도: 15 RPM → 4초 간격)
         if os.environ.get("JUDGE_MOCK", "0") != "1":
-            time.sleep(0.3)
+            time.sleep(4)
 
     n = len(results)
     avg_acc = sum(scores_acc) / n if n else 0

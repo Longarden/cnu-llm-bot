@@ -49,11 +49,24 @@ def main():
                 f'{PER_Q}개씩 자연스러운 학생 말투로 패러프레이즈하라. '
                 f'반드시 같은 유형({NAMES[label]})을 유지하라.\n'
                 f'출력은 JSON 배열만: [{{"orig":1,"paraphrases":["..","..",".."]}}, ...]\n\n{numbered}')
-            try:
-                resp = client.models.generate_content(
-                    model=MODEL, contents=prompt,
-                    config=types.GenerateContentConfig(temperature=0.9))
-                txt = (resp.text or '').strip()
+            # 429(분당 5회 제한) 백오프 재시도. 성공/소진까지 최대 4회.
+            txt = None
+            for attempt in range(4):
+                try:
+                    resp = client.models.generate_content(
+                        model=MODEL, contents=prompt,
+                        config=types.GenerateContentConfig(temperature=0.9))
+                    txt = (resp.text or '').strip()
+                    break
+                except Exception as e:
+                    msg = str(e)
+                    if '429' in msg or 'RESOURCE_EXHAUSTED' in msg:
+                        print(f'  label {label} 429 → {25*(attempt+1)}s 대기 후 재시도', flush=True)
+                        time.sleep(25 * (attempt + 1))
+                    else:
+                        print(f'  label {label} 배치 실패: {msg[:80]}', flush=True)
+                        break
+            if txt:
                 m = re.search(r'\[.*\]', txt, re.S)
                 arr = json.loads(m.group(0)) if m else []
                 for item in arr:
@@ -63,9 +76,7 @@ def main():
                             seen.add(p)
                             aug.append({'question': p, 'label': label})
                 print(f'  label {label} {NAMES[label]} [{i+len(chunk)}/{len(qs)}] 누적 {len(aug)}', flush=True)
-            except Exception as e:
-                print(f'  label {label} 배치 실패: {str(e)[:80]}', flush=True)
-            time.sleep(0.5)
+            time.sleep(13)  # 5 RPM(분당 5회) 준수 → 호출당 ≥12s
 
     json.dump(aug, open(CLS / 'train_aug.json', 'w', encoding='utf-8'),
               ensure_ascii=False, indent=2)

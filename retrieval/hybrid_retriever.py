@@ -91,6 +91,16 @@ def retrieve(question: str, n_results: int = 10, date_filter: dict | None = None
     date_filter는 Chroma where로 넘기지 않고(문자열 valid_until 타입 크래시 회피)
     융합 결과를 후처리로 거른다. ISO 날짜(YYYY-MM-DD)는 사전식 비교=시간순.
     """
+    # BM25 지연 초기화: 어떤 엔트리포인트(gen_chat_output 등 채점경로 포함)에서 호출해도
+    # _bm25가 비어 있으면 자동 구축해 하이브리드가 dense-only로 퇴화하지 않게 한다.
+    # 이미 구축됐으면 그대로 재사용(모듈 캐시 유지). 실패해도 로깅만 하고 dense로 폴백(채점 비차단).
+    global _bm25
+    if _bm25 is None:
+        try:
+            init_bm25_from_db()
+        except Exception as e:
+            print(f"[hybrid_retriever] BM25 초기화 실패, dense 폴백: {e}")
+
     pull = n_results * 2 if date_filter else n_results
 
     # W2: 쿼리 변환

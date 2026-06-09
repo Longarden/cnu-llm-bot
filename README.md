@@ -27,10 +27,10 @@
 
 ```
 질문
-  → 질문유형 분류기 (model/, klue/bert-base 기반, label 0~4, CPU 추론 가능)
+  → 질문유형 분류기 (model/, klue/roberta-base 기반, label 0~4, CPU 추론 가능)
   → 분류 결과로 data_category 소프트 라우팅
   → 하이브리드 RAG 검색 (BM25 sparse + dense + Reciprocal Rank Fusion → reranker)
-  → 로컬 생성 (EXAONE/Qwen, generation/llm.py, GEN_BACKEND=local)
+  → 로컬 생성 (EXAONE-3.5-7.8B-Instruct + bitsandbytes 4bit, generation/llm.py, GEN_BACKEND=local)
   → 답변
 ```
 

@@ -97,9 +97,9 @@ done
 #   기본은 placeholder(다운로드 링크 안내)로 대체. INCLUDE_MODEL=1 이면 실제 복사.
 MODEL_BIN="$ROOT/model/model.bin"
 if [ "${INCLUDE_MODEL:-0}" = "1" ] && [ -f "$MODEL_BIN" ]; then
-  echo "[package] model.bin 실제 동봉(INCLUDE_MODEL=1)"
-  # 분류기 추론에 필요한 부수 파일(토크나이저/설정)도 함께 복사
-  for mf in model.safetensors model.bin config.json label_map.json special_tokens_map.json \
+  echo "[package] 분류기 가중치 실제 동봉(INCLUDE_MODEL=1, safetensors)"
+  # safetensors 우선. model.bin 은 제외(safetensors 와 중복 422MB + CVE-2025-32434 .bin 차단 회피).
+  for mf in model.safetensors config.json label_map.json special_tokens_map.json \
             tokenizer.json tokenizer_config.json vocab.txt; do
     copy_one "$ROOT/model/$mf" "$STAGE/model/$mf"
   done
@@ -122,6 +122,19 @@ PLACEHOLDER
             tokenizer.json tokenizer_config.json vocab.txt; do
     copy_one "$ROOT/model/$mf" "$STAGE/model/$mf"
   done
+fi
+
+# ── chroma_db/ : RAG 벡터DB. 챗봇 검색에 필수. 작아서(약 13MB) 기본 동봉. ──
+#   INCLUDE_CHROMA=0 으로 끄면 드라이브 복원(restore_assets.sh)에 의존.
+if [ "${INCLUDE_CHROMA:-1}" = "1" ] && [ -d "$ROOT/chroma_db" ]; then
+  echo "[package] chroma_db/ 동봉(벡터DB)"
+  (cd "$ROOT" && find chroma_db -type f ! -path '*__pycache__*' -print0 \
+     | while IFS= read -r -d '' rel; do
+         mkdir -p "$STAGE/$(dirname "$rel")"
+         cp -f "$rel" "$STAGE/$rel"
+       done)
+else
+  echo "[package] chroma_db/ 미동봉 → 드라이브 복원 의존(restore_assets.sh)"
 fi
 
 # ── outputs/ : 평가 시 생성됨. 빈 폴더라도 존재해야 함 ──────────────
