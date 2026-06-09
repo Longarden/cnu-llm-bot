@@ -73,35 +73,115 @@ _EMPTY_HTML = f"""
 
 # 깔끔담백 흰 배경 + 테두리/그림자 제거(블록 구분선 없이 이어지게).
 _CSS = """
-:root, .dark{
+/* 라이트모드 강제 */
+:root, .dark {
   --body-background-fill:#ffffff !important;
   --background-fill-primary:#ffffff !important;
-  --background-fill-secondary:#ffffff !important;
+  --background-fill-secondary:#f9f9fb !important;
   --block-background-fill:#ffffff !important;
   --block-border-color:transparent !important;
-  --border-color-primary:#ececf0 !important;
-  --body-text-color:#1f2937 !important;
+  --border-color-primary:#e8e9ed !important;
+  --body-text-color:#111827 !important;
   --body-text-color-subdued:#6b7280 !important;
   --input-background-fill:#ffffff !important;
+  --button-primary-background-fill:#0a4a9e !important;
+  --button-primary-text-color:#ffffff !important;
+  color-scheme: light !important;
 }
-body, gradio-app{background:#ffffff !important}
-.gradio-container{max-width:980px !important;margin:0 auto !important;background:#ffffff;
-  padding-left:18px !important;padding-right:18px !important}
-/* 모든 블록 테두리/그림자 제거 → 흰 화면이 이어지게 */
-.block, .form, .panel{border:none !important;box-shadow:none !important;background:#ffffff !important}
-.cnu-chat{background:#ffffff !important;border:none !important;box-shadow:none !important}
-.cnu-head{text-align:center;padding:22px 0 4px}
-.cnu-emblem{width:52px;height:52px}
-.cnu-title{font-size:21px;font-weight:800;color:#0a4a9e;margin-top:8px;letter-spacing:-0.5px}
-.cnu-empty{text-align:center;color:#0a4a9e;padding:56px 10px}
-.cnu-empty .cnu-emblem{width:88px;height:88px}
-.cnu-empty-t{font-size:21px;font-weight:700;color:#374151;margin-top:14px}
-/* 입력줄: 살짝 둥근 테두리만(클로드 느낌) */
-.cnu-inputrow{border:1px solid #e6e8ec !important;border-radius:16px !important;
-  padding:4px 6px !important;margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,.04) !important}
-.cnu-badge{display:inline-block;padding:1px 9px;border-radius:11px;
-  font-size:11px;font-weight:700;color:#fff;margin-bottom:5px}
-footer{display:none !important}
+body, gradio-app {
+  background:#ffffff !important;
+  font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif !important;
+}
+.gradio-container {
+  max-width:900px !important; margin:0 auto !important;
+  background:#ffffff !important; padding:0 24px 40px !important;
+}
+.block, .form, .panel { border:none !important; box-shadow:none !important; background:#ffffff !important; }
+
+/* 헤더 */
+.cnu-head { text-align:center; padding:32px 0 10px; border-bottom:1px solid #f0f1f4; }
+.cnu-emblem { width:50px; height:50px; display:block; margin:0 auto; }
+.cnu-title { font-size:19px; font-weight:700; color:#0a4a9e; margin-top:10px; letter-spacing:-0.3px; line-height:1.3; }
+
+/* 챗 영역 */
+.cnu-chat { background:#ffffff !important; border:none !important; box-shadow:none !important; padding:8px 0 !important; }
+.cnu-chat .message-wrap, .cnu-chat [class*="message-wrap"] { padding:0 !important; gap:0 !important; }
+
+/* 유저 메시지 — 오른쪽, CNU 블루 */
+.cnu-chat .user, .cnu-chat [data-testid="user"], .cnu-chat .message.user {
+  display:flex !important; justify-content:flex-end !important; margin:10px 0 !important; padding:0 4px !important;
+}
+.cnu-chat .user .bubble-wrap, .cnu-chat [data-testid="user"] .bubble-wrap, .cnu-chat .message.user .bubble-wrap {
+  background:#0a4a9e !important; color:#ffffff !important; border-radius:18px 18px 4px 18px !important;
+  padding:10px 16px !important; max-width:72% !important; font-size:14.5px !important; line-height:1.6 !important;
+  box-shadow:0 1px 4px rgba(10,74,158,.15) !important;
+}
+
+/* 봇 메시지 — 왼쪽, 연회색 */
+.cnu-chat .bot, .cnu-chat [data-testid="bot"], .cnu-chat .message.bot {
+  display:flex !important; justify-content:flex-start !important; margin:10px 0 !important; padding:0 4px !important;
+}
+.cnu-chat .bot .bubble-wrap, .cnu-chat [data-testid="bot"] .bubble-wrap, .cnu-chat .message.bot .bubble-wrap {
+  background:#f4f5f8 !important; color:#111827 !important; border-radius:18px 18px 18px 4px !important;
+  padding:12px 18px !important; max-width:78% !important; font-size:14.5px !important; line-height:1.7 !important;
+  box-shadow:none !important; border:1px solid #ecedf1 !important;
+}
+.cnu-chat .avatar-container, .cnu-chat [class*="avatar"] { display:none !important; }
+.cnu-chat .bubble-wrap p { margin:0 0 6px !important; }
+.cnu-chat .bubble-wrap p:last-child { margin-bottom:0 !important; }
+.cnu-chat .bubble-wrap a { color:#0a4a9e; text-decoration:underline; text-underline-offset:2px; }
+.cnu-chat .user .bubble-wrap a { color:#cfe0ff; }
+.cnu-chat .bubble-wrap code { background:rgba(0,0,0,.06); border-radius:4px; padding:1px 5px; font-size:13px; }
+
+/* 빈 화면 */
+.cnu-empty { text-align:center; padding:72px 10px 56px; display:flex; flex-direction:column; align-items:center; }
+.cnu-empty .cnu-emblem { width:80px; height:80px; margin:0 auto 18px; opacity:.9; }
+.cnu-empty-t { font-size:20px; font-weight:600; color:#374151; letter-spacing:-0.2px; line-height:1.4; }
+
+/* 입력 바 — 알약형 + 포커스 링 */
+.cnu-inputrow {
+  display:flex !important; align-items:center !important; background:#ffffff !important;
+  border:1.5px solid #dde0e8 !important; border-radius:26px !important;
+  padding:6px 6px 6px 18px !important; margin-top:14px !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.055) !important; transition:border-color .18s ease, box-shadow .18s ease !important;
+}
+.cnu-inputrow:focus-within {
+  border-color:#0a4a9e !important; box-shadow:0 0 0 3px rgba(10,74,158,.10), 0 2px 8px rgba(0,0,0,.055) !important;
+}
+.cnu-inputrow textarea, .cnu-inputrow input[type="text"] {
+  border:none !important; outline:none !important; box-shadow:none !important; background:transparent !important;
+  font-size:15px !important; line-height:1.55 !important; color:#111827 !important; resize:none !important;
+  padding:4px 0 !important; min-height:38px !important; font-family:inherit !important;
+}
+.cnu-inputrow textarea::placeholder, .cnu-inputrow input[type="text"]::placeholder { color:#9ca3af !important; }
+.cnu-inputrow button[variant="primary"], .cnu-inputrow .btn-primary, .cnu-inputrow button.primary {
+  background:#0a4a9e !important; color:#ffffff !important; border:none !important; border-radius:20px !important;
+  padding:8px 20px !important; font-size:14px !important; font-weight:600 !important; font-family:inherit !important;
+  cursor:pointer !important; flex-shrink:0 !important; box-shadow:none !important; white-space:nowrap !important;
+  transition:background .16s ease, transform .12s ease !important;
+}
+.cnu-inputrow button[variant="primary"]:hover, .cnu-inputrow .btn-primary:hover, .cnu-inputrow button.primary:hover {
+  background:#083d88 !important; transform:translateY(-1px) !important;
+}
+.cnu-inputrow button[variant="primary"]:active, .cnu-inputrow .btn-primary:active, .cnu-inputrow button.primary:active {
+  transform:translateY(0) !important; background:#072f6a !important;
+}
+
+/* 분류 뱃지 */
+.cnu-badge {
+  display:inline-block; padding:2px 10px; border-radius:12px; font-size:11.5px; font-weight:700;
+  color:#ffffff; margin-bottom:7px; letter-spacing:.2px;
+}
+
+/* 기타 정리 */
+footer { display:none !important; }
+.cnu-chat label, .cnu-chat .label-wrap { display:none !important; }
+.cnu-chat ::-webkit-scrollbar { width:5px; }
+.cnu-chat ::-webkit-scrollbar-track { background:transparent; }
+.cnu-chat ::-webkit-scrollbar-thumb { background:#dde0e8; border-radius:10px; }
+.cnu-chat ::-webkit-scrollbar-thumb:hover { background:#c4c8d4; }
+.cnu-chat .message { animation:msgIn .22s cubic-bezier(.25,.8,.25,1) both; }
+@keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 """
 
 
