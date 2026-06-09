@@ -85,7 +85,8 @@ _CSS = """
   --input-background-fill:#ffffff !important;
 }
 body, gradio-app{background:#ffffff !important}
-.gradio-container{max-width:760px !important;margin:0 auto !important;background:#ffffff}
+.gradio-container{max-width:980px !important;margin:0 auto !important;background:#ffffff;
+  padding-left:18px !important;padding-right:18px !important}
 /* 모든 블록 테두리/그림자 제거 → 흰 화면이 이어지게 */
 .block, .form, .panel{border:none !important;box-shadow:none !important;background:#ffffff !important}
 .cnu-chat{background:#ffffff !important;border:none !important;box-shadow:none !important}
