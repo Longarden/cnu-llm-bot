@@ -1,13 +1,11 @@
 @echo off
 chcp 65001 >nul
-REM Launch CNU ChatBot Web UI in PREVIEW (mock) mode to inspect the design.
-REM No heavy model/RAG is loaded; mock answers are returned so the UI is interactive.
-REM A browser opens automatically. Public link also printed (gradio.live).
+REM Launch the custom FastAPI chat UI in PREVIEW (mock) mode to inspect the design.
+REM No heavy model/RAG is loaded; mock answers are returned. Browser opens automatically.
 setlocal
 set "UI_MOCK=1"
-set "GRADIO_SHARE=1"
-echo === CNU ChatBot UI preview (mock backend) ===
-echo Local:  http://127.0.0.1:7860
-echo (A public gradio.live link will also be printed below.)
+set "GRADIO_SHARE=0"
+echo === CNU ChatBot UI preview (custom FastAPI, mock backend) ===
+echo Open: http://127.0.0.1:7860
 py src\chatbot_ui.py
 pause
