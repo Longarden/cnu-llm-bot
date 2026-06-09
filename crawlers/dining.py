@@ -17,7 +17,9 @@ class DiningCrawler(BaseCrawler):
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
         from .base import fetch_with_retry
-        resp = fetch_with_retry(self.BASE_URL, headers=headers, timeout=20, retries=1)
+        # 식단은 항상 라이브 우선 경로라 타임아웃을 env(CRAWL_TIMEOUT, 기본 12초)에 맡겨
+        # 시연 중 식당페이지가 느려도 한도 안에서 빠르게 포기/응답하게 한다(명시 인자 제거).
+        resp = fetch_with_retry(self.BASE_URL, headers=headers)
         soup = BeautifulSoup(resp.content, "html.parser")
 
         items = []

@@ -6,10 +6,17 @@ CHROMA_PATH = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
 REQUIRED_METADATA = {"source_url", "data_category", "last_crawled_at", "valid_until", "freshness_tier", "original_text"}
 
 
+_collection = None  # PersistentClient/컬렉션 핸들 싱글턴(질문마다 DB 새로 여는 비용 제거)
+
+
 def _get_collection():
+    global _collection
+    if _collection is not None:
+        return _collection
     import chromadb
     client = chromadb.PersistentClient(path=CHROMA_PATH)
-    return client.get_or_create_collection("cnu_rag", metadata={"hnsw:space": "cosine"})
+    _collection = client.get_or_create_collection("cnu_rag", metadata={"hnsw:space": "cosine"})
+    return _collection
 
 
 def build_vector_db(docs: list[dict[str, Any]], batch_size: int = 100) -> None:
@@ -32,7 +39,7 @@ def build_vector_db(docs: list[dict[str, Any]], batch_size: int = 100) -> None:
         batch_texts = texts[start:start + batch_size]
         batch_meta = metadatas[start:start + batch_size]
         batch_ids = ids[start:start + batch_size]
-        embeddings = encode(batch_texts).tolist()
+        embeddings = encode(batch_texts, show_progress_bar=True).tolist()
         collection.add(documents=batch_texts, embeddings=embeddings, metadatas=batch_meta, ids=batch_ids)
         print(f"[vector_store] {start + len(batch_texts)}/{len(texts)} 저장")
 

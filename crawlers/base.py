@@ -1,15 +1,23 @@
+import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
 
 
-def fetch_with_retry(url: str, headers: dict | None = None, timeout: int = 20, retries: int = 1):
-    """GET + 재시도(기본 1회). 모두 실패하면 마지막 예외를 던진다.
+def fetch_with_retry(url: str, headers: dict | None = None,
+                     timeout: int | None = None, retries: int | None = None):
+    """GET + 재시도. 모두 실패하면 마지막 예외를 던진다.
 
-    plus.cnu 등 느린 서버에서 단발 ReadTimeout으로 라이브 크롤이 폴백되는 것을 줄인다.
-    (결정: 중간 타임아웃 20초 + 재시도 1회 + 실패 시 상위에서 정적 폴백)
+    라이브 시연/채점에서 느린(또는 죽은) 학과 서버 한 곳이 라이브 크롤 전체를 100초
+    터널 한도까지 끌어 524를 내는 것을 막기 위해, 기본 타임아웃을 짧게(8초) + 재시도 0회로
+    둔다. 느린 서버는 빨리 포기하고 상위에서 정적 폴백 → 524 대신 즉시 답.
+    환경변수 CRAWL_TIMEOUT / CRAWL_RETRIES 로 조정(호출부가 명시 인자를 주면 그 값 우선).
     """
     import requests
+    if timeout is None:
+        timeout = int(os.environ.get("CRAWL_TIMEOUT", "12"))
+    if retries is None:
+        retries = int(os.environ.get("CRAWL_RETRIES", "0"))
     last = None
     for attempt in range(retries + 1):
         try:

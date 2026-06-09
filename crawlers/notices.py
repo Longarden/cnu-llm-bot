@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from .base import BaseCrawler
+import os
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -133,6 +134,60 @@ class NoticesCrawler(BaseCrawler):
 
         items.sort(key=_sort_key, reverse=True)
         return items
+
+    def crawl_realtime(self) -> list[dict]:
+        """라이브 단건 질의용 '경량' 공지 크롤(524 방지용).
+
+        full crawl()은 게시판 6종 × 글마다 상세본문(최대 180 요청)이라 라이브엔 너무
+        무거워 100초 터널 한도를 넘겨 524를 냈다. 여기서는:
+          - plus.cnu 학사/일반공지 '목록 2개'만 (느린 학과서버는 라이브 경로에서 제외)
+          - 상세 본문 미진입(목록의 제목+날짜+링크만) → 요청 2건
+          - 타임아웃 CRAWL_TIMEOUT(기본 12초): 느린 plus.cnu 도 기다려줌. 2×12=최대 24초.
+        최신순 정렬 후 상위 10건 반환. 실패 시 빈 리스트(→ 상위에서 정적 폴백).
+        """
+        from urllib.parse import urljoin
+        from crawler_pipeline.body_extractor import fetch_html
+        timeout = int(os.environ.get("CRAWL_TIMEOUT", "12"))
+        now = datetime.utcnow().isoformat()
+        today = now[:10]
+        valid = (datetime.utcnow() + timedelta(days=1)).isoformat()
+        # plus.cnu 학사/일반공지만 사용(가장 신뢰·신속). 느린 computer.cnu 학과게시판은 제외.
+        sources = [s for s in self.NOTICE_SOURCES if "plus.cnu.ac.kr" in s[0]]
+        items = []
+        seen = set()
+        for url, base in sources:
+            try:
+                html = fetch_html(url, timeout=timeout)
+                soup = BeautifulSoup(html, "html.parser")
+            except Exception as e:
+                print(f"[notices] (realtime) {url} 목록 실패: {e}")
+                continue
+            for row in soup.select("tr, .board-list li")[:20]:
+                title_tag = row.select_one("td.subject a, .tit a, td a, .title a")
+                if not title_tag:
+                    continue
+                title = title_tag.get_text(strip=True)
+                if not title or len(title) < 3 or title in self._SKIP_TITLES:
+                    continue
+                href = title_tag.get("href", "")
+                link = urljoin(url, href) if href else url
+                if link in seen:
+                    continue
+                seen.add(link)
+                date_str = self._row_date(row)
+                # 본문 미진입 — 제목+날짜만으로 doc 구성(라이브 속도 확보).
+                items.append(self._make_doc(
+                    title=title, content=title, source_url=link,
+                    now=now, valid=valid, date=date_str or today,
+                ))
+        if not items:
+            return []  # 라이브 실패 → 상위(_live_crawl→chat_answer)에서 정적 폴백
+        items.sort(
+            key=lambda d: (d.get("date", ""),
+                           1 if any(k in d["title"] for k in self._PRIORITY_KW) else 0),
+            reverse=True,
+        )
+        return items[:10]
 
     def _fallback(self) -> list[dict]: # 크롤링 실패 시, 최근 공지사항 7개를 하드코딩하여 반환하는 함수입니다.
         now = datetime.utcnow().isoformat()

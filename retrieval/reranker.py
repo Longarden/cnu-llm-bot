@@ -17,7 +17,9 @@ def _get_cross_encoder():
         try:
             from sentence_transformers import CrossEncoder
             # bge-reranker도 .bin 배포 → transformers<4.49 고정으로 torch 2.5.1 로드 허용.
-            _cross_encoder = CrossEncoder("BAAI/bge-reranker-v2-m3", max_length=512)
+            # RERANK_DEVICE=cpu 면 리랭커를 CPU로(7.8B 생성에 VRAM 양보). 미지정=자동(GPU 있으면 GPU).
+            device = os.environ.get("RERANK_DEVICE") or None
+            _cross_encoder = CrossEncoder("BAAI/bge-reranker-v2-m3", max_length=512, device=device)
         except Exception as e:
             print(f"[reranker] CrossEncoder 로드 실패: {e}, 폴백")
             _cross_encoder = False
@@ -36,7 +38,8 @@ def rerank(question: str, docs: list[dict[str, Any]], top_k: int = 3) -> list[di
     try:
         import math
         pairs = [[question, d.get("text", d.get("original_text", "")) or ""] for d in docs]
-        scores = model.predict(pairs)
+        # batch_size 명시 → 후보들을 한 번의 GPU 배치로 채점(기본은 작게 쪼개 느림).
+        scores = model.predict(pairs, batch_size=int(os.getenv("RERANK_BATCH", "32")))
         for doc, score in zip(docs, scores):
             raw = float(score)
             doc["rerank_raw"] = raw
