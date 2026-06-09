@@ -229,6 +229,16 @@ def chat_answer(question: str, return_meta: bool = False):
 
     return_meta=True 면 (answer, {label, label_name, categories, fresh, source}) 반환.
     """
+    # 0) 빠른 인텐트 게이트: 인사/도메인밖/인젝션은 검색·크롤 없이 즉답.
+    #    (분류기가 이런 질의도 0~4로 강제 라벨링 → 식단3/공지1로 오분류 시 '항상 라이브' 규칙에
+    #     걸려 불필요한 크롤로 100초 터널 초과 → 524. RAG 앞단에서 결정론적으로 차단.)
+    quick = _quick_intent_answer(question)
+    if quick is not None:
+        q_ans, q_kind = quick
+        if return_meta:
+            return q_ans, {"label": -1, "label_name": q_kind, "categories": [], "fresh": False, "source": "intent"}
+        return q_ans
+
     label, label_name, categories = route_question(question)
     realtime_on = os.environ.get("CHAT_REALTIME", "1") == "1"
     # 변동정보(식단3·공지1)는 본질적으로 '오늘/최신' 데이터 → 날짜 키워드가 없어도 항상 라이브 우선.

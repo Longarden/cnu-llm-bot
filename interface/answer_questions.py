@@ -282,8 +282,9 @@ def _rag_answer(
             messages += build_few_shot_messages()
             messages.append({"role": "user", "content": build_user_prompt(question, chunks_for_prompt)})
             answer = llm(messages)[0]["generated_text"][-1]["content"]
-        except Exception:
-            answer = full_prompt  # 폴백
+        except Exception as e:
+            # 프롬프트 원문(SYSTEM+few-shot)을 그대로 답변으로 내보내면 누출 → 안내문구로.
+            answer = f"생성 오류: {e}"
     else:
         try:
             from generation.llm import generate

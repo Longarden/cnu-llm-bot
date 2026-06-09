@@ -15,27 +15,40 @@ export GEN_BACKEND="${GEN_BACKEND:-local}"
 export CHAT_REALTIME="${CHAT_REALTIME:-1}"
 # 공개링크: 기본은 cloudflared 미사용(=콜랩 프록시). cloudflared 퀵터널은 origin 100초 한도라
 # 느린 라이브 답변에서 524를 냈다. 콜랩에서는 좌측 '포트' 탭(또는 proxyPort)으로 열면 캡이 없다.
-# 진짜 외부 공개 URL이 필요하면 GRADIO_SHARE=1 bash chatbot.sh 로 cloudflared 를 켤 수 있다.
 export GRADIO_SHARE="${GRADIO_SHARE:-0}"
-# 리랭커(CrossEncoder bge-reranker-v2-m3) 켬 = 검색정밀도+CRAG 거절게이트 활성. T4 메모리 빠듯하면 RERANK=0 bash chatbot.sh 로 끌 수 있음.
+# 리랭커(CrossEncoder bge-reranker-v2-m3) 켬 = 검색정밀도+CRAG 거절게이트 활성.
 export RERANK="${RERANK:-1}"
-# 라이브 시연 안정성: 기본 생성모델 = EXAONE-3.5-2.4B(4bit ≈ 1.8GB). T4에 8~10GB 여유 → OOM 거의 불가.
-# 품질용 7.8B가 필요하면 MODEL_PRIMARY_NAME=LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct bash chatbot.sh 로 덮어쓰기.
-export MODEL_PRIMARY_NAME="${MODEL_PRIMARY_NAME:-LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct}"
-# CUDA 단편화 방지(에러 메시지 권장값). reserved-but-unallocated 조각으로 인한 OOM 완화.
+# 생성모델: 품질 위해 EXAONE-3.5-7.8B(4bit). 임베더/리랭커는 CPU로 내려 VRAM 확보 → T4에서 7.8B OOM 방지.
+# (7.8B 5.5GB + 임베더/리랭커 GPU 4.6GB 동시면 T4 빠듯 → 둘을 CPU로 빼서 여유 확보)
+export MODEL_PRIMARY_NAME="${MODEL_PRIMARY_NAME:-LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct}"
+export EMBED_DEVICE="${EMBED_DEVICE:-cpu}"
+export RERANK_DEVICE="${RERANK_DEVICE:-cpu}"
+# CUDA 단편화 방지(에러 메시지 권장값).
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
-# 라이브 크롤 타임아웃: (connect, read) 분리(requests 모범사례). 죽은/접속불가 호스트는 connect 4초에
-# 빨리 포기하고, 살아있지만 느린 서버(plus.cnu 등)는 read 15초까지 기다림. retries 0 = 즉시 정적 폴백.
+# 라이브 크롤 타임아웃: (connect 4초, read 15초) 분리. 죽은 호스트는 빨리 포기, 느린 plus.cnu는 기다림.
 export CRAWL_CONNECT_TIMEOUT="${CRAWL_CONNECT_TIMEOUT:-4}"
 export CRAWL_TIMEOUT="${CRAWL_TIMEOUT:-15}"
 export CRAWL_RETRIES="${CRAWL_RETRIES:-0}"
 
-# Task2/Task3 배치(outputs/*.json)는 노트북(ipynb)에서 미리 생성하므로 여기서는 만들지 않고
-# UI를 바로 띄운다(시연 빠름). 수동 재생성이 필요하면:
-#   python src/gen_chat_output.py && python src/realtime_model.py
+# (1) Task2 배치: data/test_chat.json → outputs/chat_output.json
+#     PDF 요구: 평가 시 chatbot.sh "만" 실행해도 산출물이 나와야 함. 이미 있으면 건너뜀(시연 재실행 빠름).
+if [ ! -s outputs/chat_output.json ]; then
+  echo "[chatbot.sh] (1) Task2 배치 추론 → outputs/chat_output.json"
+  python src/gen_chat_output.py || echo "[chatbot.sh] (1) 경고: chat_output 생성 오류(계속 진행)"
+else
+  echo "[chatbot.sh] (1) outputs/chat_output.json 이미 있음 — 배치 건너뜀(지우면 재생성)"
+fi
 
-# (3) 커스텀 FastAPI UI 실행 (분류 라우팅 포함 챗봇).
+# (2) Task3 배치: data/test_realtime.json → outputs/realtime_output.json
+if [ ! -s outputs/realtime_output.json ]; then
+  echo "[chatbot.sh] (2) Task3 실시간반영 → outputs/realtime_output.json"
+  python src/realtime_model.py || echo "[chatbot.sh] (2) 경고: realtime_output 생성 오류(계속 진행)"
+else
+  echo "[chatbot.sh] (2) outputs/realtime_output.json 이미 있음 — 배치 건너뜀(지우면 재생성)"
+fi
+
+# (3) 챗봇 UI 실행 (분류 라우팅 포함).
 #     콜랩: cloudflared 미사용 → 좌측 '포트(Ports)' 탭에서 7860 열기(100초 524 캡 없음).
-#     커널 셀에서 띄우면 proxyPort 링크가 자동 출력됨. 외부 공개 URL은 GRADIO_SHARE=1 로.
-echo "[chatbot.sh] 챗봇 UI 실행 — 콜랩 좌측 '포트' 탭에서 7860 을 여세요(공개링크는 자동 안내)"
+#     커널 셀에서 띄우면 proxyPort 링크 자동 출력. 외부 공개 URL은 GRADIO_SHARE=1 로.
+echo "[chatbot.sh] (3) 챗봇 UI 실행 — 콜랩 좌측 '포트' 탭에서 7860 을 여세요(공개링크 자동 안내)"
 python src/chatbot_ui.py

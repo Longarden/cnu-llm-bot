@@ -42,6 +42,7 @@ except Exception:
     pass
 
 TEST_PATH = ROOT / "data" / "test_realtime.json"
+TEST_CHAT_PATH = ROOT / "data" / "test_chat.json"  # realtime 입력 부재 시 폴백(교수가 test_chat 중 선별하는 경우 대비)
 OUT_DIR = ROOT / "outputs"
 OUT_PATH = OUT_DIR / "realtime_output.json"
 
@@ -65,14 +66,27 @@ _LIVE_LABELS = {0: "졸업요건", 1: "공지", 2: "학사일정", 3: "식단", 
 
 
 def ensure_test_file():
-    """test_realtime.json 없으면 PDF 예시로 샘플 생성."""
+    """test_realtime.json 없으면: (1) test_chat.json 으로 폴백(교수가 realtime을 test_chat 중
+    선별하는 경우 대비 — 하드코딩 샘플로 채점질문과 무관해지는 것 방지), (2) 둘 다 없을 때만 PDF 예시."""
     if TEST_PATH.exists():
         return
     TEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # 폴백 1: test_chat.json (채점 입력) 을 그대로 사용
+    if TEST_CHAT_PATH.exists():
+        try:
+            with open(TEST_CHAT_PATH, encoding="utf-8") as f:
+                rows = json.load(f)
+            with open(TEST_PATH, "w", encoding="utf-8") as f:
+                json.dump(rows, f, ensure_ascii=False, indent=2)
+            print(f"[init] test_realtime.json 없어 test_chat.json 으로 폴백: {TEST_PATH} (n={len(rows)})")
+            return
+        except Exception as e:
+            print(f"[init] test_chat 폴백 실패({e}) → PDF 예시 샘플")
+    # 폴백 2: 둘 다 없을 때만 PDF 예시 샘플
     rows = [{"user": q} for q in _SAMPLE_QUESTIONS]
     with open(TEST_PATH, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
-    print(f"[init] test_realtime.json 없어 PDF 예시로 샘플 생성: {TEST_PATH} (n={len(rows)})")
+    print(f"[init] test_realtime/test_chat 둘 다 없어 PDF 예시 샘플: {TEST_PATH} (n={len(rows)})")
 
 
 def _safe_label(question: str) -> int:
