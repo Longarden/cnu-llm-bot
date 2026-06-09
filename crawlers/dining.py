@@ -89,6 +89,8 @@ class DiningCrawler(BaseCrawler):
                 target = grid.get((ri, 1), "").strip()  # 직원/학생
                 if meal_type not in ("조식", "중식", "석식"):
                     continue
+                if target == "직원":  # 학부 재학생 대상 챗봇 → 직원 전용 메뉴는 제외(학생 메뉴만 안내)
+                    continue
 
                 for c, restaurant in restaurant_by_col.items():
                     cell_text = grid.get((ri, c), "").strip()
