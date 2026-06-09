@@ -1,19 +1,17 @@
-"""오늘 크롤(today_*.json) → all_dedup 통합 + 기존 chroma에 증분 add (CPU). 순증만(축소 금지).
+"""오늘 크롤(today_*.json) → all_dedup 통합 + 기존 chroma에 순수 증분 add (CPU). 삭제 0, 순증만.
 
 전제: chroma_db/ 에 P100 풀빌드(22203청크)가 복원돼 있어야 함.
 
-동작:
-  1. data/crawled_staging/today_*.json 모두 로드 + 품질게이트(6메타키/U+FFFD/len>=20). 신규 전부 유지.
-  2. URL이 신규에서 '정확히 1번'만 나오는 것 = 진짜 재크롤(공지 등) → 그 URL의 옛 레코드/청크만 교체.
-     같은 URL에 여러 건(식단 일자별 등)은 교체 안 하고 그대로 추가(붕괴/축소 방지).
-  3. all_dedup 백업 후: single_urls 옛 레코드 제거 + 신규 전부 append.
-  4. chroma: single_urls 옛 청크 삭제 → 신규 전부 청킹 → bge-m3(CPU) 임베딩 → add.
-  5. count 검증(순증 확인) + 샘플 쿼리.
+동작(절대 축소 안 함):
+  1. data/crawled_staging/today_*.json 로드 + 품질게이트(6메타키/U+FFFD/len>=20). 신규 전부 유지.
+  2. all_dedup 백업 후 신규 전부 append(기존 레코드 삭제 안 함).
+  3. chroma: 옛 청크 삭제 없이, 신규 레코드만 청킹 → bge-m3(CPU) 임베딩 → add.
+  4. count 검증(반드시 순증) + 샘플 쿼리.
 
+재크롤 공지의 옛/새 약한 중복은 다음 풀리빌드의 최신우선 dedup이 정리(deduplicator.py).
 실행: /c/Users/dmsak/miniconda3/python scripts/integrate_today_and_add.py
 """
 import sys, os, io, json, glob
-from collections import Counter
 from datetime import date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,38 +45,25 @@ def main():
         new_records.extend(good)
     if not new_records:
         print("신규 0건 → 종료"); return
-    print(f"신규 유효 총 {len(new_records)}건")
+    from collections import Counter
+    print(f"신규 유효 총 {len(new_records)}건  카테고리: {dict(Counter(r['data_category'] for r in new_records))}")
 
-    # URL이 신규에서 정확히 1번만 나오는 것 = 진짜 재크롤(교체 대상). 여러 건 URL은 추가만.
-    urlc = Counter(r.get("source_url", "") for r in new_records if r.get("source_url"))
-    single_urls = {u for u, c in urlc.items() if c == 1 and u}
-    print(f"교체 대상(단일레코드 URL=재크롤): {len(single_urls)} / 추가만 할 다건 URL: {sum(1 for c in urlc.values() if c>1)}")
-
-    print("=== 2. all_dedup 백업 + 갱신(신규 전부 append) ===")
+    print("=== 2. all_dedup 백업 + 신규 전부 append(삭제 0) ===")
     dd = json.load(open(ALL, encoding="utf-8"))
     bak = ALL + f".today_bak_{date.today().isoformat()}"
     if not os.path.exists(bak):
         json.dump(dd, open(bak, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    kept = [r for r in dd if r.get("source_url", "") not in single_urls]
-    merged = kept + new_records
+    merged = dd + new_records
     json.dump(merged, open(ALL, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print(f"  all_dedup {len(dd)} → {len(merged)} (재크롤 교체로 제거 {len(dd)-len(kept)}, 신규 +{len(new_records)})")
+    print(f"  all_dedup {len(dd)} → {len(merged)} (신규 +{len(new_records)}, 삭제 0)")
 
-    print("=== 3. chroma 열기 + 재크롤 URL 옛 청크만 삭제 ===")
+    print("=== 3. chroma 열기(삭제 없음) ===")
     import chromadb
     from embedding.chunker import chunk_documents
     col = chromadb.PersistentClient(path=os.path.join(ROOT, "chroma_db")) \
         .get_or_create_collection("cnu_rag", metadata={"hnsw:space": "cosine"})
     before = col.count()
     print(f"  현재 청크수: {before}")
-    su = [u for u in single_urls if u]
-    for i in range(0, len(su), 200):
-        try:
-            col.delete(where={"source_url": {"$in": su[i:i+200]}})
-        except Exception as e:
-            print(f"  (삭제 스킵: {e})")
-    after_del = col.count()
-    print(f"  재크롤 옛 청크 삭제 후: {after_del} (삭제 {before-after_del})")
 
     print("=== 4. 신규 전부 청킹 + bge-m3(CPU) 임베딩 + add ===")
     chunks = chunk_documents(new_records)
@@ -98,10 +83,13 @@ def main():
     for s in range(0, len(texts), 500):
         col.add(documents=texts[s:s+500], embeddings=emb[s:s+500], metadatas=metas[s:s+500], ids=ids[s:s+500])
     final = col.count()
-    print(f"=== 완료. 청크수 {before} → {final} (순증 {final-before:+d}) ===")
+    sign = "+" if final >= before else ""
+    print(f"=== 완료. 청크수 {before} → {final} (순증 {sign}{final-before}) ===")
+    if final < before:
+        print("  [경고] 순증이 음수! 예상과 다름 — 확인 필요")
 
     print("=== 5. 샘플 쿼리 검증 ===")
-    for q in ["이번주 학식 메뉴", "셔틀버스 운행 시간", "기말고사 성적 공지"]:
+    for q in ["이번주 학식 메뉴", "셔틀버스 운행 시간", "기말고사 성적 공지", "계절학기 폐강"]:
         qe = model.encode([q], normalize_embeddings=True).tolist()
         res = col.query(query_embeddings=qe, n_results=2)
         print(f"  Q: {q}")
