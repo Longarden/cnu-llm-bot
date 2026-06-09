@@ -260,7 +260,12 @@ def main():
     with open(TEST_PATH, encoding="utf-8") as f:
         rows = json.load(f)
     users = [r.get("user", r.get("question", "")) for r in rows]
-    print(f"[env] REALTIME_STUB={STUB}  MAX_DOCS={MAX_DOCS}  n={len(users)}  in={TEST_PATH}")
+    # REALTIME_LIMIT>0 이면 앞에서 N개만 처리(빠른 로컬 테스트용). 기본 0=전체(채점 안전).
+    LIMIT = int(os.environ.get("REALTIME_LIMIT", "0"))
+    if LIMIT > 0:
+        rows = rows[:LIMIT]
+        users = users[:LIMIT]
+    print(f"[env] REALTIME_STUB={STUB}  MAX_DOCS={MAX_DOCS}  n={len(users)}  limit={LIMIT or '전체'}  in={TEST_PATH}")
 
     out = []
     for i, q in enumerate(users):
