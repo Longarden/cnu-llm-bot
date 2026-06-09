@@ -138,9 +138,45 @@ def _render_history(history) -> str:
     return f"<div class='cnu-hist'>{items}</div>"
 
 
+# UI 미리보기(mock) 백엔드 — 무거운 모델/검색 없이 UI 디자인만 즉시 확인용.
+# 환경변수 UI_MOCK=1 이면 활성화(로컬 윈도우에서 .bat 으로 띄울 때). 채점/콜랩에선 미사용.
+_MOCK_ANSWER = {
+    "식단": "오늘 제2학생회관 학생식당 점심은 함박하이라이스 · 우동국물 · 배추김치입니다.",
+    "통학/셔틀": "교내 순환 셔틀은 정문~제2학생회관 구간을 약 15분 간격으로 운행합니다.",
+    "졸업요건": "졸업요건은 보통 총 130학점 이상 이수이며, 전공/교양 최소학점을 충족해야 합니다.",
+    "학교공지": "최근 공지는 학사지원시스템(plus.cnu.ac.kr) 공지사항 게시판에서 확인할 수 있습니다.",
+    "학사일정": "이번 학기 수강신청 정정 기간은 개강 첫 주에 진행됩니다.",
+}
+
+
+def _mock_answer(question: str, return_meta: bool = False):
+    """키워드 기반 간이 라우팅 + 고정 응답(UI 미리보기 전용, 실제 모델 미로딩)."""
+    q = question or ""
+    if any(k in q for k in ("학식", "식단", "메뉴", "밥")):
+        name, cats = "식단", ["A_dining"]
+    elif any(k in q for k in ("셔틀", "버스", "정류장", "통학")):
+        name, cats = "통학/셔틀", ["A_shuttle"]
+    elif any(k in q for k in ("졸업", "학점", "전공")):
+        name, cats = "졸업요건", ["B_academic"]
+    elif any(k in q for k in ("수강", "정정", "계절", "일정", "학기")):
+        name, cats = "학사일정", ["B_academic"]
+    else:
+        name, cats = "학교공지", ["K_notices"]
+    ans = (_MOCK_ANSWER[name]
+           + "\n\n(UI 미리보기 모드 — 실제 모델/검색 미로딩)\n출처: plus.cnu.ac.kr")
+    if return_meta:
+        return ans, {"label": -1, "label_name": name, "categories": cats}
+    return ans
+
+
 def launch_app(share: "bool | None" = None):
     import gradio as gr
-    from src.chat_pipeline import chat_answer
+
+    # UI_MOCK=1 이면 무거운 파이프라인 import 자체를 건너뛰고 목 응답 사용.
+    if os.environ.get("UI_MOCK") == "1":
+        chat_answer = _mock_answer
+    else:
+        from src.chat_pipeline import chat_answer
 
     if share is None:
         share = os.environ.get("GRADIO_SHARE", "0") == "1"
@@ -210,7 +246,7 @@ def launch_app(share: "bool | None" = None):
                     None, [chatbot, history_md], queue=False)
 
     demo.queue()
-    demo.launch(share=share, server_name="0.0.0.0")
+    demo.launch(share=share, server_name="0.0.0.0", inbrowser=not share)
     return demo
 
 
