@@ -101,7 +101,7 @@ def main():
                 model_ans = chat_answer(q)
             except Exception as e:
                 model_ans = f"생성 오류: {e}"
-        out.append({"user": q, "model": model_ans})
+        out.append({"id": test_rows[i].get("id", i), "user": q, "model": model_ans})
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
