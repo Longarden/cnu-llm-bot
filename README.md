@@ -93,20 +93,34 @@ REALTIME_STUB=1 python src/realtime_model.py
 
 | 파일 | 생성 주체 | 포맷 |
 |------|-----------|------|
-| `outputs/cls_output.json` | classifier (Task1) | `[{"question":"...","label":N}, ...]` (label 0~4) |
-| `outputs/chat_output.json` | chatbot.sh (Task2) | `[{"user":"...","model":"..."}, ...]` |
-| `outputs/realtime_output.json` | realtime (Task3, 옵션) | `[{"user":"...","model":"..."}, ...]` |
+| `outputs/cls_output.json` | classifier (Task1) | `[{"id":N,"question":"...","label":N}, ...]` (label 0~4) |
+| `outputs/chat_output.json` | chatbot.sh (Task2) | `[{"id":N,"user":"...","model":"..."}, ...]` |
+| `outputs/realtime_output.json` | realtime (Task3, 옵션) | `[{"id":N,"user":"...","model":"..."}, ...]` |
 
-## model/ 분류기 가중치
+`id` 는 입력행에 `id` 가 있으면 그 값을, 없으면 0부터의 인덱스를 사용합니다(공식 더미 양식과 동일).
 
-`model/model.bin` (약 422MB) 은 용량이 커서 제출 zip 에서 placeholder(다운로드 링크 안내)로 대체될 수 있습니다. placeholder 인 경우 안내 링크에서 내려받아 `model/model.bin` 위치에 두세요. 토크나이저/설정 파일(`config.json`, `tokenizer.json`, `vocab.txt`, `label_map.json` 등)은 가벼워 함께 동봉됩니다.
+## 용량 큰 자산(model/ · chroma_db/) — 구글드라이브 링크로 복원
+
+분류기 가중치 `model/` 과 벡터DB `chroma_db/` 는 용량이 커서 제출 zip 에 넣지 않고 구글드라이브로 배포합니다.
+
+1. `model.tar.gz`, `chroma_db.tar.gz` 를 구글드라이브에 올리고 "링크가 있는 모든 사용자: 뷰어"로 공유.
+2. `restore_assets.sh` 의 `MODEL_ID` / `CHROMA_ID` 를 각 파일ID로 교체.
+3. 콜랩에서 복원:
+
+```bash
+bash restore_assets.sh        # 드라이브에서 model/ + chroma_db/ 받아 압축해제
+```
+
+그 뒤 `src/classifier.ipynb` 와 `chatbot.sh` 를 실행하면 됩니다. (model/ 은 분류기, chroma_db/ 는 챗봇 검색에 필요)
 
 ## 제출물 패키징
 
+코드만 담은 가벼운 제출 zip 생성(model/chroma 는 위 드라이브 링크로 복원):
+
 ```bash
 TEAM=조이름 NAME=홍길동 bash scripts/package_submission.sh
-# 실제 model.bin 까지 동봉하려면:
+# 실제 가중치(model.safetensors)까지 zip 에 동봉하려면:
 INCLUDE_MODEL=1 TEAM=조이름 NAME=홍길동 bash scripts/package_submission.sh
 ```
 
-`dist/Termproject_<NAME>/` 스테이징 폴더와 `dist/Termproject_<NAME>.zip` 이 생성됩니다.
+`dist/Termproject_<NAME>/` 스테이징 폴더와 `dist/Termproject_<NAME>.zip` 이 생성됩니다. 런타임에 필요한 내부 패키지(`interface`, `retrieval`, `generation`, `embedding`, `crawlers`, `crawler_pipeline`)와 `restore_assets.sh` 가 함께 포함됩니다.
