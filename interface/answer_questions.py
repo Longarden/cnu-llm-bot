@@ -287,7 +287,9 @@ def _rag_answer(
     else:
         try:
             from generation.llm import generate
-            answer = generate(full_prompt, system_prompt=SYSTEM_PROMPT)
+            # SYSTEM_PROMPT 는 generate 내부에서 system 메시지로 들어가고 few-shot 도 주입되므로
+            # 여기서는 user_prompt 만 넘긴다(SYSTEM 중복 prepend 제거).
+            answer = generate(user_prompt, system_prompt=SYSTEM_PROMPT)
         except Exception as e:
             answer = f"생성 오류: {e}"
 

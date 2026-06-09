@@ -186,12 +186,19 @@ def _gemini_generate(prompt: str, system_prompt: str, model: str) -> str:
     return (resp.text or "").strip()
 
 
-def _local_generate(prompt: str, system_prompt: str = "") -> str:
-    """로컬 파이프라인(EXAONE) 생성. chat template 적용."""
+def _local_generate(prompt: str, system_prompt: str = "", use_fewshot: bool = False) -> str:
+    """로컬 파이프라인(EXAONE) 생성. chat template 적용.
+    use_fewshot=True 면 답변 형식/거절/날짜처리 일관성을 위해 few-shot 예시를 주입한다."""
     pipe = load_llm()
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
+    if use_fewshot:
+        try:
+            from generation.prompt import build_few_shot_messages
+            messages += build_few_shot_messages()
+        except Exception as e:
+            logger.warning(f"few-shot 주입 실패(무시): {e}")
     messages.append({"role": "user", "content": prompt})
     outputs = pipe(messages)
     if isinstance(outputs, list) and outputs:
@@ -215,7 +222,7 @@ def _has_chinese(text: str) -> bool:
     return len(_CJK_RE.findall(text or "")) >= 2
 
 
-def _generate_once(prompt: str, system_prompt: str = "") -> str:
+def _generate_once(prompt: str, system_prompt: str = "", use_fewshot: bool = False) -> str:
     """1회 생성. GEN_BACKEND=api면 Gemini Pro 우선, 실패 시 로컬 폴백."""
     if GEN_BACKEND == "api":
         try:
@@ -225,7 +232,7 @@ def _generate_once(prompt: str, system_prompt: str = "") -> str:
             logger.warning("Gemini 빈 응답 → 로컬 폴백")
         except Exception as e:
             logger.warning(f"Gemini 생성 실패({e}) → 로컬 폴백")
-    return _local_generate(prompt, system_prompt)
+    return _local_generate(prompt, system_prompt, use_fewshot=use_fewshot)
 
 
 def generate(prompt: str, system_prompt: str = "") -> str:
@@ -235,13 +242,13 @@ def generate(prompt: str, system_prompt: str = "") -> str:
     정보가 손실될 수 있다. 그래서 중국어가 감지되면 같은 컨텍스트로 '한국어로만'
     다시 생성해 정보를 보존한다(삭제는 최종 안전망으로 _clean_answer가 담당).
     """
-    out = _generate_once(prompt, system_prompt)
+    out = _generate_once(prompt, system_prompt, use_fewshot=True)
     if _has_chinese(out):
         logger.info("중국어 누출 감지 → 한국어 재생성 시도")
         ko_sys = (system_prompt +
                   "\n\n[중요] 직전 답변에 중국어가 섞였습니다. 절대 중국어를 쓰지 말고, "
                   "동일한 정보를 빠짐없이 반드시 한국어로만 다시 작성하십시오.").strip()
-        retry = _generate_once(prompt, ko_sys)
+        retry = _generate_once(prompt, ko_sys, use_fewshot=True)
         if retry and not _has_chinese(retry):
             return retry
     return out
