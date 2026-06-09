@@ -373,6 +373,18 @@ def launch_app(share: "bool | None" = None):
     port = int(os.environ.get("PORT", "7860"))
     app = _build_app(backend)
 
+    # 서버 시작 전 생성모델·분류기 미리 로드(warmup) → 첫 질문 지연/524 + 동시요청 이중로딩 방지.
+    if os.environ.get("UI_MOCK") != "1":
+        try:
+            print("[ui] 모델 워밍업 중(첫 질문 빠르게)…")
+            from generation.llm import load_llm
+            load_llm()
+            from src.chat_pipeline import load_classifier
+            load_classifier()
+            print("[ui] 워밍업 완료 — 이제 질문하면 바로 답해요")
+        except Exception as e:
+            print(f"[ui] 워밍업 건너뜀(첫 질문 때 로드): {e}")
+
     if share:
         threading.Thread(target=_tunnel, args=(port,), daemon=True).start()
     else:
