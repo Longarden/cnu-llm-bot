@@ -1,8 +1,8 @@
-"""Gradio Blocks UI (Task2) — CNUGPT 스타일. 좌측 카테고리 · 중앙 챗 · 우측 최근질문.
+"""Gradio Blocks UI (Task2) — CNU 캠퍼스 챗봇. 좌측 카테고리 · 중앙 챗 · 우측 최근질문.
 
 질문 → 분류기(model/, label 0~4) → data_category 소프트 라우팅 RAG/라이브크롤 → EXAONE 생성.
 응답 상단에 예측 질문유형 뱃지를 달아 분류 흐름을 가시화(평가 Chat Interface 항목 대응).
-타이핑 스트리밍 + 카테고리 사이드바 + 최근질문 패널로 캠퍼스 챗봇 느낌의 웹 인터페이스.
+타이핑 스트리밍 + 카테고리 사이드바 + 최근질문 패널 + 충남대 엠블럼(인라인 SVG, 외부파일 무의존).
 
 완전 로컬(외부 API 금지). 실행: python src/chatbot_ui.py
 환경변수 GRADIO_SHARE=1 이면 share URL 발급(코랩/원격 시연용).
@@ -20,7 +20,7 @@ except NameError:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# 질문유형별 뱃지(이모지 + 색). 분류 결과를 한눈에.
+# 질문유형별 뱃지(이모지 + 색).
 _CATEGORY_STYLE = {
     "졸업요건": ("🎓", "#6366f1"),
     "학교공지": ("📢", "#ef4444"),
@@ -38,24 +38,58 @@ _EXAMPLES = [
     "수강신청 정정 기간이 언제예요?",
 ]
 
-_BRAND_HTML = """
+# 충남대학교 엠블럼 — 인라인 SVG(벡터). 외부 파일/네트워크 없이 self-contained, 확대해도 선명.
+_EMBLEM_SVG = """
+<svg class="cnu-emblem" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="충남대학교 엠블럼">
+  <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#0a4a9e" stroke-width="2.5"/>
+  <circle cx="50" cy="50" r="41" fill="none" stroke="#0a4a9e" stroke-width="1"/>
+  <defs>
+    <path id="cnuTop" d="M14,50 A36,36 0 0 1 86,50"/>
+    <path id="cnuBot" d="M19,50 A31,31 0 0 0 81,50"/>
+  </defs>
+  <text font-size="6" fill="#0a4a9e" font-weight="700" letter-spacing="0.4"
+        font-family="Arial, sans-serif">
+    <textPath href="#cnuTop" startOffset="50%" text-anchor="middle">CHUNGNAM NATIONAL UNIVERSITY</textPath>
+  </text>
+  <text font-size="9" fill="#0a4a9e" font-weight="700"
+        font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+    <textPath href="#cnuBot" startOffset="50%" text-anchor="middle">충남대학교</textPath>
+  </text>
+  <g stroke="#0a4a9e" stroke-width="4.2" stroke-linecap="round" fill="none">
+    <line x1="36" y1="45" x2="64" y2="45"/>
+    <line x1="50" y1="35" x2="50" y2="45"/>
+    <line x1="40" y1="45" x2="40" y2="59"/>
+    <line x1="50" y1="45" x2="50" y2="63"/>
+    <line x1="60" y1="45" x2="60" y2="59"/>
+  </g>
+</svg>
+"""
+
+_BRAND_HTML = f"""
 <div class="cnu-topbar">
-  <div class="cnu-logo">CNU<span>GPT</span></div>
-  <div class="cnu-top-right">🎓 충남대 캠퍼스 챗봇</div>
+  <div class="cnu-brand">
+    {_EMBLEM_SVG}
+    <div class="cnu-titles">
+      <div class="cnu-logo">충남대학교 캠퍼스 챗봇</div>
+      <div class="cnu-sub">CNU Campus ChatBot · AI 학내정보 안내</div>
+    </div>
+  </div>
+  <div class="cnu-top-right"><span class="cnu-dot">●</span> 온라인</div>
 </div>
 """
 
 _SUBBAR_HTML = """
 <div class="cnu-subbar">
   <b>전체 카테고리 검색</b>
-  <span>선택한 카테고리에 맞춰 CNU AI와 대화중입니다. 🔷</span>
+  <span>질문유형을 자동 분류해 졸업요건 · 공지 · 학사일정 · 식단 · 셔틀을 안내합니다.</span>
 </div>
 """
 
-_EMPTY_HTML = """
+_EMPTY_HTML = f"""
 <div class="cnu-empty">
-  <div class="cnu-qmark">?</div>
-  <div>하단에 질문을 입력해 대화를 시작해 보세요.</div>
+  {_EMBLEM_SVG}
+  <div>무엇이든 물어보세요. 하단에 질문을 입력해 대화를 시작해 보세요.</div>
 </div>
 """
 
@@ -66,17 +100,20 @@ _DISCLAIMER_HTML = (
 _CSS = """
 .gradio-container{max-width:1180px !important}
 .cnu-topbar{display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;border-bottom:1px solid #e5e7eb;margin-bottom:8px}
-.cnu-logo{font-size:24px;font-weight:800;letter-spacing:-1px;color:#111827}
-.cnu-logo span{color:#2f6bff}
-.cnu-top-right{font-size:13px;color:#6b7280}
-.cnu-subbar{padding:4px 2px 10px}
+  padding:12px 18px;border-bottom:2px solid #0a4a9e;margin-bottom:10px}
+.cnu-brand{display:flex;align-items:center;gap:12px}
+.cnu-emblem{width:46px;height:46px;flex:none}
+.cnu-logo{font-size:19px;font-weight:800;letter-spacing:-0.5px;color:#0a4a9e}
+.cnu-sub{font-size:11px;color:#6b7280;margin-top:1px}
+.cnu-top-right{font-size:12px;color:#6b7280}
+.cnu-dot{color:#10b981}
+.cnu-subbar{padding:2px 2px 10px}
 .cnu-subbar b{font-size:18px;color:#111827}
-.cnu-subbar span{font-size:12px;color:#2f6bff;margin-left:8px}
-.cnu-side-title{font-size:13px;font-weight:700;color:#374151;margin:4px 0 6px}
-.cnu-empty{text-align:center;color:#2f6bff;padding:40px 10px}
-.cnu-qmark{display:inline-block;width:52px;height:52px;line-height:52px;border-radius:50%;
-  background:#2f6bff;color:#fff;font-size:26px;font-weight:800;margin-bottom:12px}
+.cnu-subbar span{font-size:12px;color:#0a4a9e;margin-left:8px}
+.cnu-side-title{font-size:13px;font-weight:700;color:#374151;margin:6px 0 6px;
+  padding-bottom:6px;border-bottom:1px solid #eef0f3}
+.cnu-empty{text-align:center;color:#0a4a9e;padding:34px 10px}
+.cnu-empty .cnu-emblem{width:78px;height:78px;margin-bottom:12px}
 .cnu-disc{text-align:center;font-size:11px;color:#9ca3af;margin-top:6px}
 .cnu-badge{display:inline-block;padding:2px 10px;border-radius:12px;
   font-size:12px;font-weight:700;color:#fff;margin-bottom:6px}
@@ -137,7 +174,7 @@ def launch_app(share: "bool | None" = None):
         yield history
 
     with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue"), css=_CSS,
-                   title="CNUGPT — 충남대 캠퍼스 챗봇") as demo:
+                   title="충남대학교 캠퍼스 챗봇") as demo:
         gr.HTML(_BRAND_HTML)
 
         with gr.Row():
