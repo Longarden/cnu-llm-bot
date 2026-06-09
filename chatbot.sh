@@ -29,22 +29,12 @@ export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:T
 export CRAWL_TIMEOUT="${CRAWL_TIMEOUT:-12}"
 export CRAWL_RETRIES="${CRAWL_RETRIES:-0}"
 
-# 주의: JSON 생성 단계가 실패해도(예: 일시적 크롤 실패) UI는 반드시 뜨도록 비차단(set -e 미사용).
-
-# (1)(2) Task2/Task3 배치 추론 → outputs/*.json.
-#   보통 노트북에서 미리 생성하므로, 이미 있으면 '건너뛰고 UI를 바로' 띄운다(시연 빠름).
-#   채점 안전장치: JSON 이 없을 때만 생성. 항상 새로 만들려면 FORCE_BATCH=1 bash chatbot.sh.
-if [ "${FORCE_BATCH:-0}" = "1" ] || [ ! -s outputs/chat_output.json ] || [ ! -s outputs/realtime_output.json ]; then
-    echo "[chatbot.sh] (1) Task2 배치 추론 → outputs/chat_output.json"
-    python src/gen_chat_output.py || echo "[chatbot.sh] (1) 경고: chat_output 생성 중 오류(계속 진행)"
-    echo "[chatbot.sh] (2) Task3 실시간반영 → outputs/realtime_output.json"
-    python src/realtime_model.py || echo "[chatbot.sh] (2) 경고: realtime_output 생성 중 오류(계속 진행)"
-else
-    echo "[chatbot.sh] outputs/chat_output.json·realtime_output.json 이미 있음 → 배치 생략, UI 바로 실행 (재생성: FORCE_BATCH=1)"
-fi
+# Task2/Task3 배치(outputs/*.json)는 노트북(ipynb)에서 미리 생성하므로 여기서는 만들지 않고
+# UI를 바로 띄운다(시연 빠름). 수동 재생성이 필요하면:
+#   python src/gen_chat_output.py && python src/realtime_model.py
 
 # (3) 커스텀 FastAPI UI 실행 (분류 라우팅 포함 챗봇).
 #     콜랩: cloudflared 미사용 → 좌측 '포트(Ports)' 탭에서 7860 열기(100초 524 캡 없음).
 #     커널 셀에서 띄우면 proxyPort 링크가 자동 출력됨. 외부 공개 URL은 GRADIO_SHARE=1 로.
-echo "[chatbot.sh] (3) 챗봇 UI 실행 — 콜랩 좌측 '포트' 탭에서 7860 을 여세요(공개링크는 자동 안내)"
+echo "[chatbot.sh] 챗봇 UI 실행 — 콜랩 좌측 '포트' 탭에서 7860 을 여세요(공개링크는 자동 안내)"
 python src/chatbot_ui.py
