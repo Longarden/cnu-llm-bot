@@ -97,6 +97,13 @@ body, gradio-app {
   background:#ffffff !important; padding:0 32px 40px !important;
 }
 .block, .form, .panel { border:none !important; box-shadow:none !important; background:#ffffff !important; }
+/* 내부 래퍼 폭 제한 해제 → 가로 여백 채우기(컨테이너 폭까지 가득) */
+.gradio-container .main, .gradio-container .wrap, .gradio-container .contain,
+.gradio-container .fillable, .gradio-container .app, .gradio-container > div {
+  max-width:100% !important; width:100% !important;
+}
+.cnu-chat, .cnu-inputrow, .cnu-chat .bubble-wrap ~ * { width:100% !important; max-width:100% !important; }
+.cnu-chat { min-height:520px !important; }
 
 /* 헤더 */
 .cnu-head { text-align:center; padding:32px 0 10px; border-bottom:1px solid #f0f1f4; }
