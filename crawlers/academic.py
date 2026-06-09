@@ -164,8 +164,46 @@ class AcademicCrawler(BaseCrawler):
                 date=now[:10],
             ))
 
+        docs.append(self._holiday_2026_doc())  # 2026 공휴일/임시공휴일 정적표(코퍼스에도 포함)
         logger.info("academic 크롤 완료: %d 건", len(docs))
         return docs
+
+    def _holiday_2026_doc(self) -> dict:
+        """2026 대한민국 공휴일(휴강·휴무 기준) 정적 문서.
+
+        '임시공휴일(지방선거일 등)'은 학사 캘린더 반영이 늦거나 누락될 수 있어, 결정론적으로
+        잡도록 코퍼스/라이브 양쪽에 주입한다. 출처 검증(publicholidays) 후 빨간날 아닌 제헌절은
+        제외하고, 6/3 제9회 전국동시지방선거일(법정공휴일)을 포함. freshness_tier=static.
+        """
+        now = datetime.utcnow().isoformat()
+        valid = "2026-12-31T00:00:00"
+        content = (
+            "2026년 대한민국 공휴일(대학 휴강·휴무 기준):\n"
+            "- 1월 1일(목) 신정\n"
+            "- 2월 16일(월)~18일(수) 설날 연휴\n"
+            "- 3월 1일(일) 삼일절 / 3월 2일(월) 대체공휴일\n"
+            "- 5월 5일(화) 어린이날\n"
+            "- 5월 24일(일) 부처님오신날 / 5월 25일(월) 대체공휴일\n"
+            "- 6월 3일(수) 제9회 전국동시지방선거일 (법정공휴일)\n"
+            "- 6월 6일(토) 현충일\n"
+            "- 8월 15일(토) 광복절 / 8월 17일(월) 대체공휴일\n"
+            "- 9월 24일(목)~26일(토) 추석 연휴\n"
+            "- 10월 3일(토) 개천절 / 10월 5일(월) 대체공휴일\n"
+            "- 10월 9일(금) 한글날\n"
+            "- 12월 25일(금) 성탄절\n"
+            "공휴일은 정상 휴강·휴무이며, 임시공휴일은 정부 지정에 따른다."
+        )
+        return {
+            "source_url": "https://www.cnu.ac.kr",
+            "data_category": "B_academic",
+            "last_crawled_at": now,
+            "valid_until": valid,
+            "freshness_tier": "static",
+            "original_text": content,
+            "title": "2026년 공휴일 및 임시공휴일 안내",
+            "content": content,
+            "date": now[:10],
+        }
 
     def crawl_realtime(self, max_posts: int = 5) -> list[dict]:
         """라이브용 경량 크롤(채점 시점 단발 질문 응답용).
@@ -207,6 +245,8 @@ class AcademicCrawler(BaseCrawler):
         except Exception as e:
             logger.warning("학사 게시판 실시간 크롤 실패: %s", e)
 
+        # (3) 2026 공휴일/임시공휴일 정적표 — 캘린더 누락/지연 대비 결정론적 주입.
+        docs.append(self._holiday_2026_doc())
         return docs
 
 
