@@ -88,7 +88,12 @@ def main():
         test_rows = json.load(f)
 
     users = [r.get("user", r.get("question", "")) for r in test_rows]
-    print(f"[env] CHAT_STUB={STUB}  n={len(users)}  in={TEST_PATH}")
+    # CHAT_LIMIT>0 이면 앞에서 N개만 처리(빠른 로컬 테스트용). 기본 0=전체(채점 안전).
+    LIMIT = int(os.environ.get("CHAT_LIMIT", "0"))
+    if LIMIT > 0:
+        test_rows = test_rows[:LIMIT]
+        users = users[:LIMIT]
+    print(f"[env] CHAT_STUB={STUB}  n={len(users)}  limit={LIMIT or '전체'}  in={TEST_PATH}")
 
     out = []
     for i, q in enumerate(users):
