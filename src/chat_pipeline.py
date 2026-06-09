@@ -197,7 +197,10 @@ def chat_answer(question: str, return_meta: bool = False):
     """
     label, label_name, categories = route_question(question)
     realtime_on = os.environ.get("CHAT_REALTIME", "1") == "1"
-    fresh = _needs_fresh(question)
+    # 변동정보(식단3·공지1)는 본질적으로 '오늘/최신' 데이터 → 날짜 키워드가 없어도 항상 라이브 우선.
+    # (정적 RAG는 DB에 쌓인 여러 날짜를 섞어 와서 5일전·7일전이 뒤섞인 답이 나옴 → 라이브로 최신치만.)
+    # 안정정보(졸업0·학사2·셔틀4)는 거의 안 변하니 정적 우선, 거절/만료 시에만 라이브 갱신.
+    fresh = _needs_fresh(question) or label in (1, 3)
     source = "static"
 
     if realtime_on and label in _LIVE_CAPABLE and fresh:

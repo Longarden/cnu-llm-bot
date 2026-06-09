@@ -19,6 +19,8 @@ SYSTEM_PROMPT = """당신은 충남대학교 학생·교직원을 위한 학내�
 5. 날짜·금액·시간표·학점 등 구체 수치는 자료에 있는 값만 쓰십시오. 자료에 없으면 지어내지 말고, 일반 안내와 함께 충남대학교 공식 홈페이지·담당 부서 확인을 권하십시오. 다만 "정보가 없습니다"라고 매몰차게 끊지는 마십시오.
 6. 충남대학교(cnu.ac.kr) 정보만 답하십시오. 자료에 없는 URL, 다른 대학교 이름(한서대·순천대 등), 없는 사실을 절대 지어내지 마십시오. 타 대학·일반상식·시사 질문은 "충남대학교 학내 정보 범위를 벗어난 질문입니다"라고 답하십시오.
 7. 출처 URL은 본문에 쓰지 마십시오. 출처는 시스템이 답변 끝에 자동으로 붙입니다.
+8. 기본 원칙은 '항상 가장 최신 정보로 답한다'입니다. 시점을 말하지 않은 질문(예: "학식 메뉴 알려줘", "중식 뭐야", "공지 알려줘")이나 '오늘·지금·요즘·이번 주' 같은 현재형 질문은 모두 맨 위 [오늘 날짜] 기준의 최신 정보로 답하십시오. 자료에 여러 날짜가 섞여 있으면 [오늘 날짜]에 가장 가까운 최신 것을 고르고 오래된 날짜는 버리십시오. 단, 질문이 '어제·그제·지난주·지난달·○월 ○일'처럼 과거의 특정 시점을 분명히 가리킬 때만 그 시점 기준으로 답하십시오. 어느 경우든 답에 사용한 자료의 날짜가 질문 시점과 다르면 그 날짜를 분명히 밝히고(예: "6월 9일 기준"), 요청한 시점(예: 내일)의 정보가 자료에 없으면 '비운영'이나 빈 메뉴로 단정하지 말고 "아직 게시되지 않았습니다"라고 솔직히 안내하십시오.
+9. 식단 질문에서 끼니(조식·중식·석식)를 지정하지 않으면, 오늘 '운영하는' 식당의 끼니를 간단히 정리하십시오. 특정 끼니(예: 중식)를 물으면 그 끼니만 답하십시오. 모든 식당이 운영 안 하면 그 사실만 짧게 전하고 다른 날짜·다른 끼니로 메우지 마십시오.
 
 [형식]
 - 핵심 답을 먼저 1~2문장으로 말한 뒤, 필요하면 항목(불릿/번호)으로 짧게 정리하십시오.
@@ -106,9 +108,21 @@ FEW_SHOT_EXAMPLES = [
 ]
 
 
-def build_user_prompt(question: str, retrieved_chunks: list[dict]) -> str:
+def _today_line() -> str:
+    """프롬프트 맨 위에 붙일 '오늘 날짜(KST)' 한 줄. 콜랩 등 UTC 서버에서도 한국 기준이
+    되도록 UTC+9 로 보정. 모델이 '오늘/내일/어제'를 이 날짜 기준으로 유추하게 한다."""
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc) + timedelta(hours=9)
+    wd = "월화수목금토일"[now.weekday()]
+    return f"[오늘 날짜: {now.strftime('%Y-%m-%d')} ({wd}요일) — 기본은 이 날짜 기준 최신 정보로 답하세요]"
+
+
+def build_user_prompt(question: str, retrieved_chunks: list[dict], include_today: bool = True) -> str:
     """
     검색된 청크들을 컨텍스트로 조합해 user 프롬프트 생성.
+
+    include_today=True(기본)면 맨 위에 오늘 날짜(KST)를 주입한다. few-shot 예시는
+    자체 고정 날짜가 있으므로 include_today=False 로 호출(날짜 충돌 방지).
 
     retrieved_chunks 각 항목: {
         "text": str,
@@ -131,7 +145,8 @@ def build_user_prompt(question: str, retrieved_chunks: list[dict]) -> str:
             parts.append(f"[참고자료 {i}]\n{meta}\n{chunk.get('text', '')}")
         context_str = "\n\n".join(parts)
 
-    return f"[참고 자료]\n{context_str}\n\n[질문]\n{question}"
+    head = (_today_line() + "\n\n") if include_today else ""
+    return f"{head}[참고 자료]\n{context_str}\n\n[질문]\n{question}"
 
 
 def build_few_shot_messages() -> list[dict]:
@@ -140,7 +155,7 @@ def build_few_shot_messages() -> list[dict]:
     for ex in FEW_SHOT_EXAMPLES:
         messages.append({
             "role": "user",
-            "content": build_user_prompt(ex["user"], [{"text": ex["context"], "source_url": "", "last_crawled_at": "", "valid_until": ""}]),
+            "content": build_user_prompt(ex["user"], [{"text": ex["context"], "source_url": "", "last_crawled_at": "", "valid_until": ""}], include_today=False),
         })
         messages.append({"role": "assistant", "content": ex["assistant"]})
     return messages
