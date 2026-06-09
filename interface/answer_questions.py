@@ -2,7 +2,7 @@
 교수님 제출 인터페이스 (AC12).
 questions.jsonl / .json / .csv → answers.jsonl
 """
-
+from __future__ import annotations
 import argparse
 import csv
 import json
@@ -37,27 +37,80 @@ def _strip_foreign_lines(text: str) -> str:
     return cleaned if cleaned else text
 
 
-def _clean_answer(answer: str) -> str:
-    """모델이 베껴 쓴 출처/메타/참고자료 토큰 제거 → 본문만 남김.
+# 본문에 새는 URL(http/https/www/맨도메인.ac.kr 등). 규칙7: 출처는 시스템이 따로 붙임.
+# 타대학 환각 링크(nsugang.hanseo.ac.kr=한서대, scnu.ac.kr=순천대 등)도 여기서 결정론적으로 사살.
+_URL_RE = re.compile(
+    r"(?:https?://[^\s)\]>\"'）】」]+"
+    r"|www\.[^\s)\]>\"'）】」]+"
+    r"|[A-Za-z0-9][A-Za-z0-9.\-]*\.(?:ac\.kr|go\.kr|edu|com|org|net|kr)(?:/[^\s)\]>\"'）】」]*)?)",
+    re.IGNORECASE,
+)
 
-    작은 LLM이 컨텍스트의 '[참고자료 N]', '출처: ... | 업데이트: ...'를 그대로
-    베껴 써서 출처 누출·중복이 생김. 후처리로 정리하고 깨끗한 출처를 따로 붙인다.
+
+def _strip_markdown(text: str) -> str:
+    """마크다운 기호 제거 → 평문. UI 버블이 textContent(평문)라 #·*·`·[](링크)가
+    그대로 노출돼 지저분해지는 것을 막는다. 불릿은 '- '로 통일.
     """
-    # 중국어 누출 줄 먼저 제거(한국어 전용 챗봇)
+    # [라벨](url) → 라벨  (인라인 링크의 url 제거, 라벨만 남김)
+    text = re.sub(r"\[([^\]\n]+)\]\((?:[^)\n]*)\)", r"\1", text)
+    # 이미지/빈 링크 잔재 제거
+    text = re.sub(r"!\[[^\]\n]*\]\([^)\n]*\)", "", text)
+    out = []
+    for ln in text.split("\n"):
+        # 머리말 #, 인용 > 제거
+        ln = re.sub(r"^\s{0,3}#{1,6}\s*", "", ln)
+        ln = re.sub(r"^\s{0,3}>\s?", "", ln)
+        # 불릿 통일: 줄머리 *, •, · → -
+        ln = re.sub(r"^(\s*)[*•·]\s+", r"\1- ", ln)
+        out.append(ln)
+    text = "\n".join(out)
+    # 굵게/기울임/코드 마커 제거 (** __ ` *), 잔재 토큰 정리
+    text = text.replace("**", "").replace("__", "").replace("`", "")
+    text = re.sub(r"(?<!\s)\*(?!\s)|\*", "", text)  # 남은 * 제거(불릿은 이미 -로 변환됨)
+    return text
+
+
+def _clean_answer(answer: str) -> str:
+    """모델이 베껴 쓴 출처/메타/참고자료/마크다운/본문URL 제거 → 본문만 남김.
+
+    작은 LLM(2.4B)이 컨텍스트의 '[참고자료 N]', '출처: ... | 업데이트: ...', 마크다운 헤더,
+    타대학 환각 URL 등을 그대로 써서 누출·중복·오링크가 생김. 프롬프트 규칙만으론 안 지켜져
+    결정론적 후처리로 못박는다. 깨끗한 출처는 호출부가 따로 1줄 붙인다(규칙7).
+    """
+    # 1) 중국어 누출 줄 먼저 제거(한국어 전용 챗봇)
     answer = _strip_foreign_lines(answer)
-    # 인라인 [참고자료 N] / 참고자료 N 토큰 제거
+    # 2) 인라인 [참고자료 N] / 참고자료 N 토큰 제거
     answer = re.sub(r"\[?\s*참고자료\s*\d+\s*\]?", "", answer)
-    # 첫 출처 마커부터 끝까지 잘라냄 (모델이 붙인 출처 꼬리 제거 → 우리가 깨끗한 출처 1줄 재부착).
-    # **출처**: / ##출처 / 출처: / [출처 등 마크다운으로 감싼 형태도 모두 잡는다(중복 방지).
-    answer = re.split(r"\n?\s*(?:[#*\s]*출처[#*\s]*[:：]|\[출처|##+\s*출처)", answer, maxsplit=1)[0]
-    # 잔재 메타 줄(업데이트/유효기간/마지막 업데이트/날짜:) 제거
+    # 3) 첫 '출처/출처 URL/참고문헌' 마커부터 끝까지 잘라냄(모델이 붙인 꼬리 제거 → 우리가 깨끗한 출처 재부착).
+    #    **출처**: / ##출처 / 출처: / 출처 URL: / [출처 등 마크다운·변형도 모두 잡는다.
+    answer = re.split(
+        r"\n?\s*(?:[#*\s]*출처\s*(?:URL|url|링크)?[#*\s]*[:：]|\[출처|##+\s*출처|참고\s*문헌\s*[:：])",
+        answer, maxsplit=1,
+    )[0]
+    # 4) 마크다운 기호 제거(평문화)
+    answer = _strip_markdown(answer)
+    # 5) 본문에 남은 URL 전부 제거(규칙7 + 타대학 환각 링크 사살). URL만 있던 줄은 통째 버림.
     kept = []
     for ln in answer.split("\n"):
         s = ln.strip().lstrip("[(-* ")
+        # 잔재 메타 줄(업데이트/유효기간/마지막 업데이트/날짜:) 제거
         if re.match(r"^(업데이트|유효기간|마지막\s*업데이트|날짜)\s*[:：]", s):
             continue
-        kept.append(ln)
-    return "\n".join(kept).strip()
+        stripped = _URL_RE.sub("", ln)
+        had_url = (ln.strip() != stripped.strip())
+        if had_url:
+            # URL 빠진 자리의 빈 괄호/대괄호, 줄끝 여는 괄호 정리
+            stripped = re.sub(r"[\(\[【（]\s*[)\]】）]?|\s*[)\]】）]\s*$", " ", stripped)
+        # URL 떼고 남은 게 라벨/기호뿐이면(예: '출처 URL: ', '- 주소:', '()') 줄 버림
+        residue = re.sub(r"[\s\-*:：()\[\]·•]|출처|URL|링크|바로가기|주소|사이트|페이지|홈페이지|here|link",
+                         "", stripped, flags=re.IGNORECASE)
+        if not residue and had_url:
+            continue  # URL 때문에 존재하던 줄 → 제거
+        kept.append(re.sub(r"[ \t]{2,}", " ", stripped).rstrip())
+    answer = "\n".join(kept)
+    # 6) 빈 줄 3개+ → 2개로, 양끝 정리
+    answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
+    return answer
 
 
 def _load_questions(path: str) -> list[dict]:
@@ -180,7 +233,9 @@ def _rag_answer(
     else:
         try:
             from retrieval.hybrid_retriever import retrieve
-            docs = retrieve(question, n_results=10, date_filter=date_filter)
+            # use_meta_boost: 최신성+카테고리+변경키워드 소프트 가중(RRF 스케일 보정 완료) →
+            # '변동/최신' 질의에서 최신 변경공지를 top-k로. query_transform 은 라이브 지연(524) 때문에 OFF.
+            docs = retrieve(question, n_results=10, date_filter=date_filter, use_meta_boost=True)
         except Exception:
             docs = []
         try:
