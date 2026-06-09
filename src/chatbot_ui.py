@@ -1,12 +1,13 @@
-"""Gradio Blocks UI (Task2) — CNU 캠퍼스 챗봇. 좌측 카테고리 · 중앙 챗 · 우측 최근질문.
+"""Gradio Blocks UI (Task2) — 심플 채팅(제미나이/클로드 스타일). 단일 컬럼 + CNU 엠블럼.
 
 질문 → 분류기(model/, label 0~4) → data_category 소프트 라우팅 RAG/라이브크롤 → EXAONE 생성.
-응답 상단에 예측 질문유형 뱃지를 달아 분류 흐름을 가시화(평가 Chat Interface 항목 대응).
-타이핑 스트리밍 + 카테고리 사이드바 + 최근질문 패널 + 충남대 엠블럼(인라인 SVG, 외부파일 무의존).
+응답 상단에 작은 분류 뱃지(분류 흐름 가시화). 밝은 배경, 가운데 정렬, 하단 입력창만.
 
 완전 로컬(외부 API 금지). 실행: python src/chatbot_ui.py
-환경변수 GRADIO_SHARE=1 이면 share URL 발급(코랩/원격 시연용).
-대상 Gradio 6.x (Chatbot 메시지 포맷 기본, type 인자 없음).
+환경변수:
+  GRADIO_SHARE=1  공개 share URL 발급(콜랩/원격 시연)
+  UI_MOCK=1       무거운 모델/검색 없이 UI 디자인만 즉시 미리보기(로컬 점검용)
+대상 Gradio 6.x (Chatbot 메시지 포맷 기본).
 """
 import os
 import sys
@@ -28,7 +29,6 @@ _CATEGORY_STYLE = {
     "식단": ("🍚", "#10b981"),
     "통학/셔틀": ("🚌", "#3b82f6"),
 }
-_CATEGORIES = ["전체 카테고리", "졸업요건", "학교공지", "학사일정", "식단", "통학/셔틀"]
 
 _EXAMPLES = [
     "오늘 학식 메뉴가 뭐예요?",
@@ -38,7 +38,7 @@ _EXAMPLES = [
     "수강신청 정정 기간이 언제예요?",
 ]
 
-# 충남대학교 엠블럼 — 인라인 SVG(벡터). 외부 파일/네트워크 없이 self-contained, 확대해도 선명.
+# 충남대학교 엠블럼 — 인라인 SVG(벡터). 외부 파일/네트워크 없이 self-contained.
 _EMBLEM_SVG = """
 <svg class="cnu-emblem" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-label="충남대학교 엠블럼">
@@ -66,30 +66,19 @@ _EMBLEM_SVG = """
 </svg>
 """
 
-_BRAND_HTML = f"""
-<div class="cnu-topbar">
-  <div class="cnu-brand">
-    {_EMBLEM_SVG}
-    <div class="cnu-titles">
-      <div class="cnu-logo">충남대학교 캠퍼스 챗봇</div>
-      <div class="cnu-sub">CNU Campus ChatBot · AI 학내정보 안내</div>
-    </div>
-  </div>
-  <div class="cnu-top-right"><span class="cnu-dot">●</span> 온라인</div>
-</div>
-"""
-
-_SUBBAR_HTML = """
-<div class="cnu-subbar">
-  <b>전체 카테고리 검색</b>
-  <span>질문유형을 자동 분류해 졸업요건 · 공지 · 학사일정 · 식단 · 셔틀을 안내합니다.</span>
+_HEADER_HTML = f"""
+<div class="cnu-head">
+  {_EMBLEM_SVG}
+  <div class="cnu-title">충남대학교 캠퍼스 챗봇</div>
+  <div class="cnu-tag">졸업요건 · 학교공지 · 학사일정 · 식단 · 통학/셔틀 안내</div>
 </div>
 """
 
 _EMPTY_HTML = f"""
 <div class="cnu-empty">
   {_EMBLEM_SVG}
-  <div>무엇이든 물어보세요. 하단에 질문을 입력해 대화를 시작해 보세요.</div>
+  <div class="cnu-empty-t">무엇을 도와드릴까요?</div>
+  <div class="cnu-empty-s">아래에 질문을 입력해 대화를 시작해 보세요.</div>
 </div>
 """
 
@@ -97,27 +86,20 @@ _DISCLAIMER_HTML = (
     '<div class="cnu-disc">AI 챗봇은 실수를 할 수 있습니다. 중요한 정보는 재차 확인하세요.</div>'
 )
 
+# 밝은 배경 + 가운데 정렬 + 심플(제미나이/클로드 느낌).
 _CSS = """
-.gradio-container{max-width:1180px !important}
-.cnu-topbar{display:flex;align-items:center;justify-content:space-between;
-  padding:12px 18px;border-bottom:2px solid #0a4a9e;margin-bottom:10px}
-.cnu-brand{display:flex;align-items:center;gap:12px}
-.cnu-emblem{width:46px;height:46px;flex:none}
-.cnu-logo{font-size:19px;font-weight:800;letter-spacing:-0.5px;color:#0a4a9e}
-.cnu-sub{font-size:11px;color:#6b7280;margin-top:1px}
-.cnu-top-right{font-size:12px;color:#6b7280}
-.cnu-dot{color:#10b981}
-.cnu-subbar{padding:2px 2px 10px}
-.cnu-subbar b{font-size:18px;color:#111827}
-.cnu-subbar span{font-size:12px;color:#0a4a9e;margin-left:8px}
-.cnu-side-title{font-size:13px;font-weight:700;color:#374151;margin:6px 0 6px;
-  padding-bottom:6px;border-bottom:1px solid #eef0f3}
-.cnu-empty{text-align:center;color:#0a4a9e;padding:34px 10px}
-.cnu-empty .cnu-emblem{width:78px;height:78px;margin-bottom:12px}
-.cnu-disc{text-align:center;font-size:11px;color:#9ca3af;margin-top:6px}
-.cnu-badge{display:inline-block;padding:2px 10px;border-radius:12px;
-  font-size:12px;font-weight:700;color:#fff;margin-bottom:6px}
-.cnu-hist{font-size:13px;color:#4b5563;line-height:1.9}
+.gradio-container{max-width:820px !important;margin:0 auto !important;background:#ffffff}
+.cnu-head{text-align:center;padding:18px 0 8px}
+.cnu-emblem{width:56px;height:56px}
+.cnu-title{font-size:22px;font-weight:800;color:#0a4a9e;margin-top:8px;letter-spacing:-0.5px}
+.cnu-tag{font-size:12px;color:#8a93a0;margin-top:3px}
+.cnu-empty{text-align:center;color:#0a4a9e;padding:46px 10px}
+.cnu-empty .cnu-emblem{width:84px;height:84px}
+.cnu-empty-t{font-size:20px;font-weight:700;color:#374151;margin-top:14px}
+.cnu-empty-s{font-size:13px;color:#9ca3af;margin-top:4px}
+.cnu-disc{text-align:center;font-size:11px;color:#b6bcc6;margin-top:8px}
+.cnu-badge{display:inline-block;padding:1px 9px;border-radius:11px;
+  font-size:11px;font-weight:700;color:#fff;margin-bottom:5px}
 footer{display:none !important}
 """
 
@@ -129,17 +111,7 @@ def _badge_html(label_name: str) -> str:
     return f'<span class="cnu-badge" style="background:{color}">{emoji} {label_name}</span>'
 
 
-def _render_history(history) -> str:
-    """우측 패널: 이번 세션의 최근 사용자 질문 목록(최신 위)."""
-    qs = [m["content"] for m in (history or []) if m.get("role") == "user"]
-    if not qs:
-        return "<div class='cnu-hist'>아직 질문이 없습니다.</div>"
-    items = "".join(f"• {q}<br>" for q in reversed(qs[-8:]))
-    return f"<div class='cnu-hist'>{items}</div>"
-
-
-# UI 미리보기(mock) 백엔드 — 무거운 모델/검색 없이 UI 디자인만 즉시 확인용.
-# 환경변수 UI_MOCK=1 이면 활성화(로컬 윈도우에서 .bat 으로 띄울 때). 채점/콜랩에선 미사용.
+# UI 미리보기(mock) 백엔드 — 무거운 모델/검색 없이 UI만 즉시 확인용(UI_MOCK=1).
 _MOCK_ANSWER = {
     "식단": "오늘 제2학생회관 학생식당 점심은 함박하이라이스 · 우동국물 · 배추김치입니다.",
     "통학/셔틀": "교내 순환 셔틀은 정문~제2학생회관 구간을 약 15분 간격으로 운행합니다.",
@@ -150,7 +122,6 @@ _MOCK_ANSWER = {
 
 
 def _mock_answer(question: str, return_meta: bool = False):
-    """키워드 기반 간이 라우팅 + 고정 응답(UI 미리보기 전용, 실제 모델 미로딩)."""
     q = question or ""
     if any(k in q for k in ("학식", "식단", "메뉴", "밥")):
         name, cats = "식단", ["A_dining"]
@@ -172,7 +143,6 @@ def _mock_answer(question: str, return_meta: bool = False):
 def launch_app(share: "bool | None" = None):
     import gradio as gr
 
-    # UI_MOCK=1 이면 무거운 파이프라인 import 자체를 건너뛰고 목 응답 사용.
     if os.environ.get("UI_MOCK") == "1":
         chat_answer = _mock_answer
     else:
@@ -209,41 +179,26 @@ def launch_app(share: "bool | None" = None):
         history[-1]["content"] = full
         yield history
 
-    with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue"), css=_CSS,
-                   title="충남대학교 캠퍼스 챗봇") as demo:
-        gr.HTML(_BRAND_HTML)
+    with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate"),
+                   css=_CSS, title="충남대학교 캠퍼스 챗봇") as demo:
+        gr.HTML(_HEADER_HTML)
+
+        chatbot = gr.Chatbot(height=470, show_label=False, placeholder=_EMPTY_HTML)
 
         with gr.Row():
-            # 좌측: 카테고리 사이드바
-            with gr.Column(scale=2, min_width=160):
-                gr.HTML("<div class='cnu-side-title'>카테고리</div>")
-                gr.Radio(_CATEGORIES, value="전체 카테고리", show_label=False,
-                         container=False)
+            msg = gr.Textbox(placeholder="메시지를 입력하세요…", scale=9,
+                             show_label=False, autofocus=True, container=False)
+            send = gr.Button("전송", variant="primary", scale=1, min_width=72)
 
-            # 중앙: 챗
-            with gr.Column(scale=7):
-                gr.HTML(_SUBBAR_HTML)
-                chatbot = gr.Chatbot(height=430, show_label=False,
-                                     placeholder=_EMPTY_HTML)
-                with gr.Row():
-                    msg = gr.Textbox(placeholder="메시지를 작성하세요.", scale=9,
-                                     show_label=False, autofocus=True, container=False)
-                    send = gr.Button("전송", variant="primary", scale=1, min_width=70)
-                gr.Examples(examples=_EXAMPLES, inputs=msg, label="예시 질문")
-                gr.HTML(_DISCLAIMER_HTML)
-                clear = gr.Button("대화 초기화", size="sm")
-
-            # 우측: 최근 질문
-            with gr.Column(scale=2, min_width=160):
-                gr.HTML("<div class='cnu-side-title'>최근 질문</div>")
-                history_md = gr.HTML("<div class='cnu-hist'>아직 질문이 없습니다.</div>")
+        gr.Examples(examples=_EXAMPLES, inputs=msg, label="예시 질문")
+        with gr.Row():
+            clear = gr.Button("새 대화", size="sm")
+        gr.HTML(_DISCLAIMER_HTML)
 
         for trigger in (msg.submit, send.click):
             trigger(_user_submit, [msg, chatbot], [msg, chatbot], queue=False) \
-                .then(_bot_stream, chatbot, chatbot) \
-                .then(_render_history, chatbot, history_md)
-        clear.click(lambda: ([], "<div class='cnu-hist'>아직 질문이 없습니다.</div>"),
-                    None, [chatbot, history_md], queue=False)
+                .then(_bot_stream, chatbot, chatbot)
+        clear.click(lambda: [], None, chatbot, queue=False)
 
     demo.queue()
     demo.launch(share=share, server_name="0.0.0.0", inbrowser=not share)
