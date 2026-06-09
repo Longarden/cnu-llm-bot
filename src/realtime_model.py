@@ -145,6 +145,15 @@ def _docs_to_chunks(docs: list[dict], question: str = "") -> list[dict]:
         t = (d.get("title", "") or "")
         return t.startswith("충남대 학식 [") and ("구분 " in t)  # 끼니 헤더행
 
+    # 안내문/원산지/디스클레이머 청크는 답변에 잡텍스트로 베껴지므로 제거(메뉴만 남김).
+    def _is_boilerplate(d):
+        title = (d.get("title", "") or "")
+        txt = _txt(d)
+        if "운영안내" in title or "원산지" in title:
+            return True
+        return ("여러분들의 건강식사" in txt) or ("최선을 다하겠습니다" in txt)
+    docs = [d for d in docs if not _is_boilerplate(d)]
+
     # 질문 토큰(2글자+) 중 doc에 등장하는 게 많을수록 관련도↑
     q_tokens = [w for w in question.replace("?", " ").split() if len(w) >= 2]
 
