@@ -93,8 +93,8 @@ body, gradio-app {
   font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif !important;
 }
 .gradio-container {
-  max-width:900px !important; margin:0 auto !important;
-  background:#ffffff !important; padding:0 24px 40px !important;
+  max-width:1320px !important; margin:0 auto !important;
+  background:#ffffff !important; padding:0 32px 40px !important;
 }
 .block, .form, .panel { border:none !important; box-shadow:none !important; background:#ffffff !important; }
 
