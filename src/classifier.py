@@ -77,7 +77,9 @@ def main():
             logits = model(**enc).logits
             preds.extend(logits.argmax(dim=-1).cpu().tolist())
 
-    out = [{'question': q, 'label': int(p)} for q, p in zip(questions, preds)]
+    # 공식 템플릿 양식: id, question, label. id 는 입력행의 id 있으면 사용, 없으면 인덱스.
+    out = [{'id': test_rows[i].get('id', i), 'question': q, 'label': int(p)}
+           for i, (q, p) in enumerate(zip(questions, preds))]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     with open(OUT_PATH, 'w', encoding='utf-8') as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
