@@ -1,8 +1,15 @@
 """충남대 학식 메뉴 크롤러 - mobileadmin.cnu.ac.kr/food/index.jsp"""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from .base import BaseCrawler
 import requests
 from bs4 import BeautifulSoup
+
+# 식단은 '오늘' 기준이 중요 → UTC(utcnow)면 한국 오전에 전날로 찍혀 날짜 어긋남. KST(UTC+9) 고정.
+_KST = timezone(timedelta(hours=9))
+
+
+def _kst_now() -> datetime:
+    return datetime.now(_KST)
 
 
 class DiningCrawler(BaseCrawler):
@@ -12,8 +19,8 @@ class DiningCrawler(BaseCrawler):
     BASE_URL = "https://mobileadmin.cnu.ac.kr/food/index.jsp"
 
     def crawl(self) -> list[dict]:
-        now = datetime.utcnow().isoformat()
-        valid = (datetime.utcnow() + timedelta(days=1)).isoformat()
+        now = _kst_now().isoformat()
+        valid = (_kst_now() + timedelta(days=1)).isoformat()
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
         from .base import fetch_with_retry
@@ -89,7 +96,10 @@ class DiningCrawler(BaseCrawler):
                 target = grid.get((ri, 1), "").strip()  # 직원/학생
                 if meal_type not in ("조식", "중식", "석식"):
                     continue
-                if target == "직원":  # 학부 재학생 대상 챗봇 → 직원 전용 메뉴는 제외(학생 메뉴만 안내)
+                # 학부 재학생 대상 챗봇 → '학생' 또는 대상 미표기 행만 통과.
+                # (완전일치 "직원"만 거르면 rowspan/공백/"직원 학생" 병합 변형에서 직원메뉴가 새어나옴
+                #  → '학생' 미포함이면서 대상표기가 있는 행은 모두 제외 = 직원 전용 차단)
+                if target and "학생" not in target:
                     continue
 
                 for c, restaurant in restaurant_by_col.items():
@@ -149,7 +159,7 @@ class DiningCrawler(BaseCrawler):
 
         가격/운영시간은 학기 단위 고정이라 semi_static. 메뉴 변경 시 수동 갱신.
         """
-        now = datetime.utcnow().isoformat()
+        now = _kst_now().isoformat()
         valid = "2026-08-31T00:00:00"  # 학기 단위 유효(고정 메뉴)
         content = (
             "제1학생회관 푸드코트 메뉴 (평일 운영, 주말 운영 안함):\n"
