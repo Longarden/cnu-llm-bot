@@ -31,7 +31,8 @@ langchain-community>=0.2.0
 langchain-text-splitters>=0.2.0
 
 # UI / 서빙
-gradio>=4.0.0
+gradio>=6.0,<7   # Blocks UI(src/chatbot_ui.py)는 Gradio 6 기준(Chatbot 메시지 포맷 기본).
+#                  5.x 이하는 대화 포맷이 tuples 기본이라 dict 메시지가 깨짐 → 6.x로 고정.
 fastapi>=0.110.0
 uvicorn>=0.29.0
 
