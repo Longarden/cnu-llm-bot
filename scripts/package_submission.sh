@@ -73,12 +73,14 @@ done
 copy_one "$ROOT/chatbot.sh"        "$STAGE/chatbot.sh"
 copy_one "$ROOT/requirements.txt"  "$STAGE/requirements.txt"
 copy_one "$ROOT/README.md"         "$STAGE/README.md"
-chmod +x "$STAGE/chatbot.sh" 2>/dev/null || true
+copy_one "$ROOT/restore_assets.sh" "$STAGE/restore_assets.sh"
+copy_one "$ROOT/.gitattributes"    "$STAGE/.gitattributes"
+chmod +x "$STAGE/chatbot.sh" "$STAGE/restore_assets.sh" 2>/dev/null || true
 
 # ── 챗봇 파이프라인 실행에 필요한 지원 패키지 동봉 ───────────────────
 #   src/*.py 가 import 하는 내부 모듈들. 이게 없으면 chatbot.sh 가 실행 불가.
 #   (PDF 필수 레이아웃 외 보조 자료. 평가 환경에서 import 경로 보존.)
-for pkg in interface retrieval generation embedding crawlers; do
+for pkg in interface retrieval generation embedding crawlers crawler_pipeline; do
   if [ -d "$ROOT/$pkg" ]; then
     # __pycache__ 제외하고 복사
     mkdir -p "$STAGE/$pkg"
@@ -97,20 +99,22 @@ MODEL_BIN="$ROOT/model/model.bin"
 if [ "${INCLUDE_MODEL:-0}" = "1" ] && [ -f "$MODEL_BIN" ]; then
   echo "[package] model.bin 실제 동봉(INCLUDE_MODEL=1)"
   # 분류기 추론에 필요한 부수 파일(토크나이저/설정)도 함께 복사
-  for mf in model.bin config.json label_map.json special_tokens_map.json \
+  for mf in model.safetensors model.bin config.json label_map.json special_tokens_map.json \
             tokenizer.json tokenizer_config.json vocab.txt; do
     copy_one "$ROOT/model/$mf" "$STAGE/model/$mf"
   done
 else
-  # placeholder: 용량 큰 model.bin 은 다운로드 링크로 대체
-  cat > "$STAGE/model/model.bin" <<'PLACEHOLDER'
-# === model.bin PLACEHOLDER ===
-# 분류기 가중치(약 422MB)는 용량이 커서 zip 에서 제외했습니다.
-# 아래 링크에서 내려받아 이 위치(model/model.bin)에 두세요.
-#   다운로드 링크: <여기에 공유 링크를 붙여넣으세요>
-#
-# 실제 동봉이 필요하면:  INCLUDE_MODEL=1 bash scripts/package_submission.sh
-# (model.bin 외 config.json/tokenizer.json/vocab.txt 등도 함께 복사됨)
+  # placeholder: 용량 큰 가중치는 드라이브 링크로 대체(restore_assets.sh 로 복원)
+  cat > "$STAGE/model/DOWNLOAD_MODEL.txt" <<'PLACEHOLDER'
+=== 분류기 가중치(model.safetensors)는 용량이 커서 zip 에서 제외했습니다 ===
+
+복원 방법 (둘 중 하나):
+  1) restore_assets.sh 의 MODEL_ID 를 드라이브 파일ID로 채운 뒤:  bash restore_assets.sh
+  2) 수동: model.tar.gz 를 드라이브에서 받아 압축해제 → model/ 에 safetensors+config+tokenizer 배치
+
+드라이브 링크(채워넣기): <model.tar.gz 공유 링크>
+
+(zip 에 실제 가중치까지 동봉하려면:  INCLUDE_MODEL=1 bash scripts/package_submission.sh)
 PLACEHOLDER
   echo "[package] model.bin → placeholder(다운로드 링크 안내) 생성"
   # placeholder 모드에서도 토크나이저/설정은 가벼우니 동봉(분류기 로드용)
