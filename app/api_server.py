@@ -18,6 +18,7 @@ FastAPI 서버 (과제 슬라이드 6 "Working API" 요구사항).
          -d '{"question": "도서관 열람실 몇 시까지 해요?"}'
 """
 
+import threading
 import time
 from typing import List
 
@@ -29,9 +30,27 @@ from interface.answer_questions import _rag_answer
 
 app = FastAPI(
     title="충남대학교 학내정보 Q/A API",
-    description="RAG 기반 학내정보 챗봇 API (벡터DB 검색 + 로컬 Qwen 생성).",
+    description="RAG 기반 학내정보 챗봇 API (벡터DB 검색 + 로컬 EXAONE 생성).",
     version="1.0.0",
 )
+
+# 단일 GPU에서 동시 요청이 생성기에 같이 들어가면 메모리 경합/OOM → 직렬화.
+_gen_lock = threading.Lock()
+
+
+@app.on_event("startup")
+def _warmup() -> None:
+    """서버 기동 시 모델·인덱스를 미리 로드(첫 HTTP 요청의 콜드스타트 제거).
+
+    UI(chatbot_ui)는 이미 워밍업하지만 API 서버에는 없어 첫 /ask 가 모델 3종+BM25
+    인덱스를 통째로 로드하느라 수 분 걸렸음. 더미 질문 1건으로 전 경로를 데워둔다.
+    """
+    try:
+        print("[api] 워밍업 중(모델/인덱스 선로딩)…")
+        _rag_answer("워밍업", return_context=True)
+        print("[api] 워밍업 완료 — 첫 요청부터 빠르게 응답")
+    except Exception as e:
+        print(f"[api] 워밍업 건너뜀(첫 요청 때 로드): {e}")
 
 
 class AskRequest(BaseModel):
@@ -56,7 +75,8 @@ def health() -> dict:
 def ask(req: AskRequest) -> AskResponse:
     """질문 1건을 받아 RAG 파이프라인으로 답변을 생성해 반환."""
     start = time.perf_counter()
-    answer, top_docs, rejected = _rag_answer(req.question, return_context=True)
+    with _gen_lock:  # 생성은 단일 GPU 직렬 — 동시요청 경합/OOM 방지
+        answer, top_docs, rejected = _rag_answer(req.question, return_context=True)
     elapsed_ms = round((time.perf_counter() - start) * 1000)
 
     # 출처 URL 추출 (중복 제거, gradio_app / answer_questions 와 동일 규칙)

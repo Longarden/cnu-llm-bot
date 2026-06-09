@@ -31,6 +31,10 @@ MODEL_EXAONE_78B_AWQ = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ"  # 참고용(t
 # OOM 시 폴백도 EXAONE(한국어 유지). 7.8B 4bit≈5~6GB라 T4서 거의 OOM 안 나지만 안전망.
 MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct")
 
+# 생성 길이 상한. RAG 답변은 짧으므로 512→256 으로 낮춰 최악 디코딩 시간을 절반으로.
+# 더 긴 답이 필요하면 MAX_NEW_TOKENS 로 올림. (한 토큰씩 그리디 생성이라 이 값이 곧 추론 상한시간)
+MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "256"))
+
 # EXAONE 안전 리비전(2024-12-09 초기 릴리스, RopeParameters 추가 전). MODEL_REVISION 미지정 시 자동 적용.
 EXAONE_SAFE_REVISIONS = {
     "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct": "8e6fc27",
@@ -83,7 +87,11 @@ def load_llm(model_name: Optional[str] = None) -> object:
             trust_remote_code=True,
             revision=revision,
             use_safetensors=True,  # torch<2.6 .bin 차단(CVE-2025-32434) 우회
+            low_cpu_mem_usage=True,  # 로드 시 가중치를 한 번만 메모리에 올림(로드 가속)
         )
+        # 비양자화 텐서/연산은 fp16 로 둬 GPU 추론 가속(bnb 4bit 의 compute_dtype 와 일관).
+        if torch.cuda.is_available():
+            load_kwargs["torch_dtype"] = torch.float16
         is_awq = "awq" in name.lower()
         # 비-AWQ 모델은 bitsandbytes 4bit로 로드(T4에 7B ~5GB). AWQ(autoawq)는
         # transformers 4.51을 기대해 4.48에서 qwen3 import로 깨지므로, 표준 모델 +
@@ -108,9 +116,10 @@ def load_llm(model_name: Optional[str] = None) -> object:
             "text-generation",
             model=model,
             tokenizer=tokenizer,
-            max_new_tokens=512,
+            max_new_tokens=MAX_NEW_TOKENS,
             do_sample=False,
             repetition_penalty=1.05,
+            use_cache=True,  # KV 캐시(기본 True 명시) — 토큰마다 과거 재계산 방지
         )
         return pipe
 
