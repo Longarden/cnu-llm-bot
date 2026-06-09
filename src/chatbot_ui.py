@@ -330,6 +330,40 @@ def _wait_port(port: int, timeout: int = 40) -> bool:
     return False
 
 
+def _in_colab() -> bool:
+    try:
+        import google.colab  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def _colab_link(port: int):
+    """콜랩 공개 링크 안내. cloudflared(100초 524 캡) 대신 콜랩 내장 프록시 사용.
+
+    proxyPort 는 노트북 '커널' 안에서만 동작한다(eval_js 가 프론트엔드와 통신). 커널 셀에서
+    import 로 띄우면 링크가 자동 출력되고, `bash chatbot.sh`(서브프로세스)에선 eval_js 가
+    안 되므로 좌측 '포트' 탭 / 한 줄 명령을 안내한다. 어느 쪽이든 100초 캡은 없다.
+    """
+    if not _wait_port(port):
+        print("[ui] 서버 시작 대기 실패")
+        return
+    url = None
+    try:
+        from google.colab.output import eval_js
+        url = eval_js(f"google.colab.kernel.proxyPort({port})")
+    except Exception as e:
+        print(f"[ui] proxyPort 자동 링크 실패(서브프로세스/터미널이면 정상): {e}")
+    print("\n" + "=" * 64)
+    if url:
+        print("  공개 링크(클릭):", url)
+    else:
+        print(f"  콜랩 좌측 '포트(Ports)' 탭에서 {port} 를 여세요. 또는 노트북 셀에서:")
+        print(f"    from google.colab.output import eval_js; print(eval_js('google.colab.kernel.proxyPort({port})'))")
+    print("  (cloudflared 미사용 → 100초 524 캡 없음)")
+    print("=" * 64 + "\n")
+
+
 def _tunnel(port: int):
     if not _wait_port(port):
         print("[ui] 서버 시작 대기 실패")
@@ -394,7 +428,11 @@ def launch_app(share: "bool | None" = None):
             print(f"[ui] 워밍업 건너뜀(첫 질문 때 로드): {e}")
 
     if share:
+        # 명시적 외부 공개 URL 요청 시에만 cloudflared(100초 캡 주의).
         threading.Thread(target=_tunnel, args=(port,), daemon=True).start()
+    elif _in_colab():
+        # 콜랩 기본: cloudflared 없이 내장 프록시로 안내 → 524 캡 없음.
+        threading.Thread(target=_colab_link, args=(port,), daemon=True).start()
     else:
         threading.Thread(
             target=lambda: (_wait_port(port) and webbrowser.open(f"http://127.0.0.1:{port}")),
