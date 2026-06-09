@@ -158,7 +158,7 @@ def _try_realtime(question: str, label: int):
         return None
     try:
         from src.realtime_model import _live_crawl, _docs_to_chunks, _generate_from_live, _CRAWL_FAIL_MSG
-        docs = _live_crawl(label)
+        docs = _live_crawl(label, question)
         if not docs:
             return None
         chunks = _docs_to_chunks(docs, question)
