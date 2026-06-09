@@ -200,16 +200,21 @@ def chat_answer(question: str, return_meta: bool = False):
     fresh = _needs_fresh(question)
     source = "static"
 
-    # 1) 항상 정적 RAG 먼저 — 캡처해 둔 고정 콘텐츠(pdf/hwp/이미지 등) 우선 + 라이브 실패 대비 폴백 확보.
-    answer, docs, rejected = _static_answer(question, categories)
-
-    # 2) '변하는 정보'일 때만 라이브로 갱신(라벨 무관 · 콘텐츠 신선도 기준):
-    #    질문이 최신 요구(fresh) / 정적 거절 / 정적 top 이 휘발성인데 valid_until 만료(stale).
-    #    라이브 소스가 없는 라벨이면 _try_realtime 이 None → 정적 답변 유지.
-    if realtime_on and (fresh or rejected or _static_is_stale(docs)):
+    if realtime_on and label in _LIVE_CAPABLE and fresh:
+        # 최신 요구(오늘/다음주/바뀐/최신 등) → 라이브 우선. 정적 생성을 생략해 속도↑.
+        # (정적+라이브 둘 다 생성하면 생성 2회 + 리랭커 로드로 터널 100초 초과 → 524). 라이브 실패 시만 정적.
         live = _try_realtime(question, label)
         if live is not None:
             answer, source = live, "live"
+        else:
+            answer = _static_answer(question, categories)[0]
+    else:
+        # 평상시 → 정적 RAG 먼저(고정 콘텐츠 우선). 정적 거절이거나 휘발성+만료(stale)면 라이브로 갱신.
+        answer, docs, rejected = _static_answer(question, categories)
+        if realtime_on and (rejected or _static_is_stale(docs)):
+            live = _try_realtime(question, label)
+            if live is not None:
+                answer, source = live, "live"
 
     if return_meta:
         return answer, {

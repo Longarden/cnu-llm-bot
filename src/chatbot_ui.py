@@ -381,6 +381,14 @@ def launch_app(share: "bool | None" = None):
             load_llm()
             from src.chat_pipeline import load_classifier
             load_classifier()
+            # 검색기·리랭커도 미리 데움(BM25 init + CrossEncoder 로드) → 첫 정적질문 지연 방지.
+            try:
+                from retrieval.hybrid_retriever import retrieve
+                from retrieval.reranker import rerank
+                _wd = retrieve("졸업 학점", n_results=5)
+                rerank("졸업 학점", _wd, top_k=3)
+            except Exception as _we:
+                print(f"[ui] 검색기 워밍업 스킵: {_we}")
             print("[ui] 워밍업 완료 — 이제 질문하면 바로 답해요")
         except Exception as e:
             print(f"[ui] 워밍업 건너뜀(첫 질문 때 로드): {e}")
