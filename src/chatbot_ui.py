@@ -1,13 +1,13 @@
-"""Gradio Blocks UI (Task2) — 심플 채팅(제미나이/클로드 스타일). 단일 컬럼 + CNU 엠블럼.
+"""Gradio Blocks UI (Task2) — 심플 채팅(클로드/제미나이 스타일). 흰 배경, 단일 컬럼.
 
 질문 → 분류기(model/, label 0~4) → data_category 소프트 라우팅 RAG/라이브크롤 → EXAONE 생성.
-응답 상단에 작은 분류 뱃지(분류 흐름 가시화). 밝은 배경, 가운데 정렬, 하단 입력창만.
+응답 상단에 작은 분류 뱃지. 테두리/그림자 없는 깔끔한 흰 화면 + 하단 입력창만.
 
 완전 로컬(외부 API 금지). 실행: python src/chatbot_ui.py
 환경변수:
   GRADIO_SHARE=1  공개 share URL 발급(콜랩/원격 시연)
-  UI_MOCK=1       무거운 모델/검색 없이 UI 디자인만 즉시 미리보기(로컬 점검용)
-대상 Gradio 6.x (Chatbot 메시지 포맷 기본).
+  UI_MOCK=1       무거운 모델/검색 없이 UI 디자인만 즉시 미리보기(로컬 점검)
+대상 Gradio 6.x.
 """
 import os
 import sys
@@ -21,7 +21,6 @@ except NameError:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# 질문유형별 뱃지(이모지 + 색).
 _CATEGORY_STYLE = {
     "졸업요건": ("🎓", "#6366f1"),
     "학교공지": ("📢", "#ef4444"),
@@ -30,15 +29,7 @@ _CATEGORY_STYLE = {
     "통학/셔틀": ("🚌", "#3b82f6"),
 }
 
-_EXAMPLES = [
-    "오늘 학식 메뉴가 뭐예요?",
-    "궁동행 셔틀 배차 간격이 어떻게 돼?",
-    "컴퓨터인공지능학부 졸업하려면 뭐가 필요해?",
-    "최근 학교 공지 뭐 올라왔어?",
-    "수강신청 정정 기간이 언제예요?",
-]
-
-# 충남대학교 엠블럼 — 인라인 SVG(벡터). 외부 파일/네트워크 없이 self-contained.
+# 충남대학교 엠블럼 — 인라인 SVG(벡터, 외부파일/네트워크 무의존).
 _EMBLEM_SVG = """
 <svg class="cnu-emblem" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-label="충남대학교 엠블럼">
@@ -70,7 +61,6 @@ _HEADER_HTML = f"""
 <div class="cnu-head">
   {_EMBLEM_SVG}
   <div class="cnu-title">충남대학교 캠퍼스 챗봇</div>
-  <div class="cnu-tag">졸업요건 · 학교공지 · 학사일정 · 식단 · 통학/셔틀 안내</div>
 </div>
 """
 
@@ -78,26 +68,36 @@ _EMPTY_HTML = f"""
 <div class="cnu-empty">
   {_EMBLEM_SVG}
   <div class="cnu-empty-t">무엇을 도와드릴까요?</div>
-  <div class="cnu-empty-s">아래에 질문을 입력해 대화를 시작해 보세요.</div>
 </div>
 """
 
-_DISCLAIMER_HTML = (
-    '<div class="cnu-disc">AI 챗봇은 실수를 할 수 있습니다. 중요한 정보는 재차 확인하세요.</div>'
-)
-
-# 밝은 배경 + 가운데 정렬 + 심플(제미나이/클로드 느낌).
+# 깔끔담백 흰 배경 + 테두리/그림자 제거(블록 구분선 없이 이어지게).
 _CSS = """
-.gradio-container{max-width:820px !important;margin:0 auto !important;background:#ffffff}
-.cnu-head{text-align:center;padding:18px 0 8px}
-.cnu-emblem{width:56px;height:56px}
-.cnu-title{font-size:22px;font-weight:800;color:#0a4a9e;margin-top:8px;letter-spacing:-0.5px}
-.cnu-tag{font-size:12px;color:#8a93a0;margin-top:3px}
-.cnu-empty{text-align:center;color:#0a4a9e;padding:46px 10px}
-.cnu-empty .cnu-emblem{width:84px;height:84px}
-.cnu-empty-t{font-size:20px;font-weight:700;color:#374151;margin-top:14px}
-.cnu-empty-s{font-size:13px;color:#9ca3af;margin-top:4px}
-.cnu-disc{text-align:center;font-size:11px;color:#b6bcc6;margin-top:8px}
+:root, .dark{
+  --body-background-fill:#ffffff !important;
+  --background-fill-primary:#ffffff !important;
+  --background-fill-secondary:#ffffff !important;
+  --block-background-fill:#ffffff !important;
+  --block-border-color:transparent !important;
+  --border-color-primary:#ececf0 !important;
+  --body-text-color:#1f2937 !important;
+  --body-text-color-subdued:#6b7280 !important;
+  --input-background-fill:#ffffff !important;
+}
+body, gradio-app{background:#ffffff !important}
+.gradio-container{max-width:760px !important;margin:0 auto !important;background:#ffffff}
+/* 모든 블록 테두리/그림자 제거 → 흰 화면이 이어지게 */
+.block, .form, .panel{border:none !important;box-shadow:none !important;background:#ffffff !important}
+.cnu-chat{background:#ffffff !important;border:none !important;box-shadow:none !important}
+.cnu-head{text-align:center;padding:22px 0 4px}
+.cnu-emblem{width:52px;height:52px}
+.cnu-title{font-size:21px;font-weight:800;color:#0a4a9e;margin-top:8px;letter-spacing:-0.5px}
+.cnu-empty{text-align:center;color:#0a4a9e;padding:56px 10px}
+.cnu-empty .cnu-emblem{width:88px;height:88px}
+.cnu-empty-t{font-size:21px;font-weight:700;color:#374151;margin-top:14px}
+/* 입력줄: 살짝 둥근 테두리만(클로드 느낌) */
+.cnu-inputrow{border:1px solid #e6e8ec !important;border-radius:16px !important;
+  padding:4px 6px !important;margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,.04) !important}
 .cnu-badge{display:inline-block;padding:1px 9px;border-radius:11px;
   font-size:11px;font-weight:700;color:#fff;margin-bottom:5px}
 footer{display:none !important}
@@ -111,7 +111,7 @@ def _badge_html(label_name: str) -> str:
     return f'<span class="cnu-badge" style="background:{color}">{emoji} {label_name}</span>'
 
 
-# UI 미리보기(mock) 백엔드 — 무거운 모델/검색 없이 UI만 즉시 확인용(UI_MOCK=1).
+# UI 미리보기(mock) 백엔드 — 무거운 모델/검색 없이 UI만 즉시 확인(UI_MOCK=1).
 _MOCK_ANSWER = {
     "식단": "오늘 제2학생회관 학생식당 점심은 함박하이라이스 · 우동국물 · 배추김치입니다.",
     "통학/셔틀": "교내 순환 셔틀은 정문~제2학생회관 구간을 약 15분 간격으로 운행합니다.",
@@ -134,7 +134,7 @@ def _mock_answer(question: str, return_meta: bool = False):
     else:
         name, cats = "학교공지", ["K_notices"]
     ans = (_MOCK_ANSWER[name]
-           + "\n\n(UI 미리보기 모드 — 실제 모델/검색 미로딩)\n출처: plus.cnu.ac.kr")
+           + "\n\n(UI 미리보기 모드 — 실제 모델/검색 미로딩)")
     if return_meta:
         return ans, {"label": -1, "label_name": name, "categories": cats}
     return ans
@@ -183,22 +183,17 @@ def launch_app(share: "bool | None" = None):
                    css=_CSS, title="충남대학교 캠퍼스 챗봇") as demo:
         gr.HTML(_HEADER_HTML)
 
-        chatbot = gr.Chatbot(height=470, show_label=False, placeholder=_EMPTY_HTML)
+        chatbot = gr.Chatbot(height=500, show_label=False, placeholder=_EMPTY_HTML,
+                             elem_classes="cnu-chat")
 
-        with gr.Row():
+        with gr.Row(elem_classes="cnu-inputrow"):
             msg = gr.Textbox(placeholder="메시지를 입력하세요…", scale=9,
                              show_label=False, autofocus=True, container=False)
             send = gr.Button("전송", variant="primary", scale=1, min_width=72)
 
-        gr.Examples(examples=_EXAMPLES, inputs=msg, label="예시 질문")
-        with gr.Row():
-            clear = gr.Button("새 대화", size="sm")
-        gr.HTML(_DISCLAIMER_HTML)
-
         for trigger in (msg.submit, send.click):
             trigger(_user_submit, [msg, chatbot], [msg, chatbot], queue=False) \
                 .then(_bot_stream, chatbot, chatbot)
-        clear.click(lambda: [], None, chatbot, queue=False)
 
     demo.queue()
     demo.launch(share=share, server_name="0.0.0.0", inbrowser=not share)
