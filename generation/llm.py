@@ -1,6 +1,6 @@
 """
 답변생성 LLM 로드 모듈.
-PRIMARY: EXAONE-3.5-7.8B-Instruct + bitsandbytes 4bit(nf4) (한국어 특화, T4 16GB서 ~5-6GB).
+PRIMARY: EXAONE-3.5-2.4B-Instruct + bitsandbytes 4bit (한국어 특화, 빠른 로드/추론). 7.8B는 MODEL_PRIMARY_NAME 으로 override.
 T4 OOM 시 EXAONE-3.5-2.4B-Instruct 로 자동 폴백.
 GPU 없는 환경(iGPU/CPU)에서 import만 성공하고 실제 로드는 코랩에서.
 
@@ -18,14 +18,15 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# 환경변수로 모델 지정 가능. 결정(2026-06-02): 답변생성=EXAONE-3.5-7.8B-Instruct + bitsandbytes 4bit.
+# 환경변수로 모델 지정 가능. 기본=EXAONE-3.5-2.4B-Instruct + bitsandbytes 4bit(빠른 로드/추론).
+# 더 높은 품질이 필요하면 MODEL_PRIMARY_NAME=LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct 로 override(로드 ~4분).
 # 이유: EXAONE은 한국어 네이티브라 중국어 코드스위칭이 없음(Qwen의 유일한 약점 해소).
 #   7.8B 4bit≈5~6GB라 T4(16GB)서 여유있게 구동. 2.4B는 검증완료, 7.8B는 품질↑(같은 로딩경로).
 #   단 EXAONE 최신 remote code는 transformers 4.49+(RopeParameters)를 요구해 4.48(torch2.5.1 조건)에서
 #   깨지므로, RopeParameters 이전 '초기 릴리스 리비전'을 핀해서 4.48에서 로드(가중치는 최신과 동일,
 #   config만 옛 버전). EXAONE_SAFE_REVISIONS가 모델별로 자동 핀.
 MODEL_PRIMARY = os.environ.get("MODEL_PRIMARY_NAME",
-                               "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct")
+                               "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct")
 MODEL_EXAONE_78B_AWQ = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ"  # 참고용(torch>=2.6 환경 전용)
 # OOM 시 폴백도 EXAONE(한국어 유지). 7.8B 4bit≈5~6GB라 T4서 거의 OOM 안 나지만 안전망.
 MODEL_FALLBACK = os.environ.get("MODEL_FALLBACK_NAME", "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct")
