@@ -42,7 +42,9 @@ def _strip_foreign_lines(text: str) -> str:
 _URL_RE = re.compile(
     r"(?:https?://[^\s)\]>\"'）】」]+"
     r"|www\.[^\s)\]>\"'）】」]+"
-    r"|[A-Za-z0-9][A-Za-z0-9.\-]*\.(?:ac\.kr|go\.kr|edu|com|org|net|kr)(?:/[^\s)\]>\"'）】」]*)?)",
+    # 스킴 없는 기관 도메인만(ac.kr/go.kr). 이메일 local-part·파일명·버전 오삭제 방지 위해
+    # 앞에 단어문자/@가 오면 매칭 안 함. (.com/.kr 등 일반 TLD는 제외 — http/www 분기가 잡음)
+    r"|(?<![\w@])[A-Za-z0-9][A-Za-z0-9.\-]*\.(?:ac\.kr|go\.kr)(?:/[^\s)\]>\"'）】」]*)?)",
     re.IGNORECASE,
 )
 

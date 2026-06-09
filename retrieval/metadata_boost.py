@@ -47,6 +47,20 @@ def _today_dt() -> datetime:
     return datetime.utcnow()
 
 
+def _field(doc: dict, *keys: str) -> str:
+    """doc 평탄형(top-level)이든 nested(metadata 안)이든 필드를 안전하게 읽는다.
+
+    _dense_search 는 메타를 top-level로 평탄화하지만, sparse/rerank 결과는 metadata 안에
+    둘 수 있어 boost 가 silent no-op 되는 것을 막는다(코드리뷰 HIGH 반영).
+    """
+    meta = doc.get("metadata") if isinstance(doc.get("metadata"), dict) else {}
+    for k in keys:
+        v = doc.get(k) or meta.get(k)
+        if v:
+            return str(v)
+    return ""
+
+
 def _detect_category(question: str) -> "str | None":
     """질문에 가장 강하게 매칭되는 카테고리 1개. 매칭 안 되면 None."""
     best, best_n = None, 0
@@ -60,13 +74,13 @@ def _detect_category(question: str) -> "str | None":
 
 def _doc_date(doc: dict) -> "datetime | None":
     """doc['date']/last_crawled_at 에서 날짜 1개를 datetime 으로. 못 찾으면 None."""
-    for field in ("date", "last_crawled_at"):
-        m = re.search(r"(\d{4})[-./](\d{1,2})[-./](\d{1,2})", str(doc.get(field) or ""))
-        if m:
-            try:
-                return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-            except ValueError:
-                continue
+    raw = _field(doc, "date", "last_crawled_at")
+    m = re.search(r"(\d{4})[-./](\d{1,2})[-./](\d{1,2})", raw)
+    if m:
+        try:
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            return None
     return None
 
 
@@ -97,14 +111,14 @@ def _category_boost(doc: dict, target_cat: "str | None") -> float:
     """카테고리 의도 매칭. RRF 스케일로 축소(+0.008)."""
     if not target_cat:
         return 0.0
-    return 0.008 if doc.get("data_category") == target_cat else 0.0
+    return 0.008 if _field(doc, "data_category") == target_cat else 0.0
 
 
 def _change_boost(doc: dict, is_change_q: bool) -> float:
     """'변동' 질의일 때만, 실제 변경공지로 보이는 문서를 끌어올림(+0.012)."""
     if not is_change_q:
         return 0.0
-    text = (doc.get("title", "") or "") + " " + (doc.get("original_text") or doc.get("content") or "")
+    text = _field(doc, "title") + " " + _field(doc, "original_text", "content", "text")
     return 0.012 if any(k in text for k in _CHANGE_DOC_KW) else 0.0
 
 
