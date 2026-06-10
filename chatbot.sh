@@ -23,6 +23,8 @@ export RERANK="${RERANK:-1}"
 export MODEL_PRIMARY_NAME="${MODEL_PRIMARY_NAME:-LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct}"
 export EMBED_DEVICE="${EMBED_DEVICE:-cpu}"
 export RERANK_DEVICE="${RERANK_DEVICE:-cpu}"
+# 생성 토큰 상한: 256 은 졸업요건·셔틀 같은 긴 답이 중간에 잘림 → 512 로 상향(잘림 방지).
+export MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-512}"
 # CUDA 단편화 방지(에러 메시지 권장값).
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 # 라이브 크롤 타임아웃: (connect 4초, read 15초) 분리. 죽은 호스트는 빨리 포기, 느린 plus.cnu는 기다림.
