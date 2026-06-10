@@ -39,25 +39,9 @@ if ! python -c "import importlib.metadata as m,sys; sys.exit(0 if m.version('tor
   pip install -q -r requirements.txt || echo "[chatbot.sh] 경고: requirements 설치 일부 실패(계속 진행)"
 fi
 
-# (1) Task2 배치: data/test_chat.json → outputs/chat_output.json
-#     PDF 요구: 평가 시 chatbot.sh "만" 실행해도 산출물이 나와야 함. 이미 있으면 건너뜀(시연 재실행 빠름).
-if [ ! -s outputs/chat_output.json ]; then
-  echo "[chatbot.sh] (1) Task2 배치 추론 → outputs/chat_output.json"
-  python src/gen_chat_output.py || echo "[chatbot.sh] (1) 경고: chat_output 생성 오류(계속 진행)"
-else
-  echo "[chatbot.sh] (1) outputs/chat_output.json 이미 있음 — 배치 건너뜀(지우면 재생성)"
-fi
-
-# (2) Task3 배치: data/test_realtime.json → outputs/realtime_output.json
-if [ ! -s outputs/realtime_output.json ]; then
-  echo "[chatbot.sh] (2) Task3 실시간반영 → outputs/realtime_output.json"
-  python src/realtime_model.py || echo "[chatbot.sh] (2) 경고: realtime_output 생성 오류(계속 진행)"
-else
-  echo "[chatbot.sh] (2) outputs/realtime_output.json 이미 있음 — 배치 건너뜀(지우면 재생성)"
-fi
-
-# (3) 챗봇 UI 실행 (분류 라우팅 포함).
-#     콜랩: cloudflared 미사용 → 좌측 '포트(Ports)' 탭에서 7860 열기(100초 524 캡 없음).
-#     커널 셀에서 띄우면 proxyPort 링크 자동 출력. 외부 공개 URL은 GRADIO_SHARE=1 로.
-echo "[chatbot.sh] (3) 챗봇 UI 실행 — 콜랩 좌측 '포트' 탭에서 7860 을 여세요(공개링크 자동 안내)"
-python src/chatbot_ui.py
+# chat 배치 + realtime 배치 + UI 를 '단일 프로세스'(run_all.py)로 실행 → 생성모델 7B 를 1회만 로드.
+#   (기존엔 python 3번 호출 → 7B 3번 로드, 콜랩에서 로딩만 ~5분 낭비 + 포트/GPU 충돌). 이미 산출물이
+#   있으면 배치는 run_all 내부에서 건너뜀. 강제 재생성: FORCE_BATCH=1 bash chatbot.sh.
+#   콜랩: cloudflared 미사용 → 좌측 '포트(Ports)' 탭에서 7860(100초 524 캡 없음). 외부 URL은 GRADIO_SHARE=1.
+echo "[chatbot.sh] 단일 프로세스 실행(run_all): chat+realtime 배치 → UI (7B 1회 로드)"
+python src/run_all.py
