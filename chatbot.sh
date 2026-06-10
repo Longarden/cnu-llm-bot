@@ -30,6 +30,13 @@ export CRAWL_CONNECT_TIMEOUT="${CRAWL_CONNECT_TIMEOUT:-4}"
 export CRAWL_TIMEOUT="${CRAWL_TIMEOUT:-15}"
 export CRAWL_RETRIES="${CRAWL_RETRIES:-0}"
 
+# 의존성 보장: 채점 Colab 기본 torch가 사양(2.5.1)과 다르면 requirements 설치(torch 핀이 실제 적용되게).
+# 이미 2.5.1 이면 건너뜀(빠름). torch import 없이 메타데이터 버전만 확인.
+if ! python -c "import importlib.metadata as m,sys; sys.exit(0 if m.version('torch')=='2.5.1' else 1)" 2>/dev/null; then
+  echo "[chatbot.sh] torch 사양 불일치 → requirements 설치(torch 2.5.1 등)"
+  pip install -q -r requirements.txt || echo "[chatbot.sh] 경고: requirements 설치 일부 실패(계속 진행)"
+fi
+
 # (1) Task2 배치: data/test_chat.json → outputs/chat_output.json
 #     PDF 요구: 평가 시 chatbot.sh "만" 실행해도 산출물이 나와야 함. 이미 있으면 건너뜀(시연 재실행 빠름).
 if [ ! -s outputs/chat_output.json ]; then
