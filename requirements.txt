@@ -4,6 +4,8 @@
 torch==2.5.1
 torchvision==0.20.1   # torch 2.5.1 호환쌍 필수. (Colab 기본 torchvision은 torch2.11용이라
 #                       안 맞추면 transformers 임포트가 'torchvision::nms' 에러로 통째 깨짐)
+pytorch-lightning==2.4.0   # 과제 사양 명시 버전. 본 프로젝트 런타임엔 미사용이나 사양 충족 위해 핀.
+#                            (torch 2.5.1 호환. pip freeze 에 동일 버전으로 잡히게 둠)
 
 # 분류기 + 임베딩 + 로컬 생성(EXAONE/Qwen)
 transformers>=4.46.0,<4.49.0   # 4.49+는 CVE-2025-32434로 torch<2.6에서 pytorch_model.bin 로드를
