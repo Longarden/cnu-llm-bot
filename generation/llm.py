@@ -242,13 +242,16 @@ def generate(prompt: str, system_prompt: str = "") -> str:
     정보가 손실될 수 있다. 그래서 중국어가 감지되면 같은 컨텍스트로 '한국어로만'
     다시 생성해 정보를 보존한다(삭제는 최종 안전망으로 _clean_answer가 담당).
     """
-    out = _generate_once(prompt, system_prompt, use_fewshot=True)
+    # few-shot 미사용(A안): 예시의 구체 사실(가짜 메뉴·날짜·국가장학금 등)을 모델이 실제 답에
+    # 복사하는 누출이 관측됨(같은 식당인데 예시 메뉴로 답하는 모순). 형식·행동은 SYSTEM_PROMPT
+    # 규칙 + _quick_intent_answer 가 이미 담당하므로 few-shot 없이도 품질 유지 + 환각 제거.
+    out = _generate_once(prompt, system_prompt, use_fewshot=False)
     if _has_chinese(out):
         logger.info("중국어 누출 감지 → 한국어 재생성 시도")
         ko_sys = (system_prompt +
                   "\n\n[중요] 직전 답변에 중국어가 섞였습니다. 절대 중국어를 쓰지 말고, "
                   "동일한 정보를 빠짐없이 반드시 한국어로만 다시 작성하십시오.").strip()
-        retry = _generate_once(prompt, ko_sys, use_fewshot=True)
+        retry = _generate_once(prompt, ko_sys, use_fewshot=False)
         if retry and not _has_chinese(retry):
             return retry
     return out

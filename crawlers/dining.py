@@ -12,6 +12,23 @@ def _kst_now() -> datetime:
     return datetime.now(_KST)
 
 
+# 메뉴 셀의 알레르기 표기 노이즈 제거: 영어 알레르기 단어(pork/chicken…)와 "X 포함" 태그.
+# 한국어만 규칙 위반(영어)·답변 잡음·길이(잘림)를 동시에 줄임. 소스(데리 마요 소스) 같은 실제 설명은 보존.
+import re as _re
+_ALLERGEN_RE = _re.compile(
+    r"\s*\(?\s*(?:pork|chicken|beef|egg|milk|fish|shrimp|돼지고기|소고기|쇠고기|닭고기|치킨|계란|달걀|우유|새우|게살?|오징어|밀)\s*포함\s*\)?",
+    _re.IGNORECASE)
+_BARE_EN_RE = _re.compile(r"\b(?:pork|chicken|beef|egg|fish|shrimp)\b", _re.IGNORECASE)
+
+
+def _clean_menu(text: str) -> str:
+    t = _ALLERGEN_RE.sub("", text or "")
+    t = _BARE_EN_RE.sub("", t)
+    t = _re.sub(r"\s*,\s*,", ", ", t)
+    t = _re.sub(r"\s{2,}", " ", t).strip(" ,")
+    return t
+
+
 class DiningCrawler(BaseCrawler):
     category_id = "A_dining"
     category_name = "학식"
@@ -103,7 +120,7 @@ class DiningCrawler(BaseCrawler):
                     continue
 
                 for c, restaurant in restaurant_by_col.items():
-                    cell_text = grid.get((ri, c), "").strip()
+                    cell_text = _clean_menu(grid.get((ri, c), "").strip())
                     if not cell_text or cell_text in SKIP_TOKENS:
                         continue
                     label = f"{meal_type}({target})" if target else meal_type
