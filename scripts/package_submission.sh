@@ -73,9 +73,8 @@ done
 copy_one "$ROOT/chatbot.sh"        "$STAGE/chatbot.sh"
 copy_one "$ROOT/requirements.txt"  "$STAGE/requirements.txt"
 copy_one "$ROOT/README.md"         "$STAGE/README.md"
-copy_one "$ROOT/restore_assets.sh" "$STAGE/restore_assets.sh"
 copy_one "$ROOT/.gitattributes"    "$STAGE/.gitattributes"
-chmod +x "$STAGE/chatbot.sh" "$STAGE/restore_assets.sh" 2>/dev/null || true
+chmod +x "$STAGE/chatbot.sh" 2>/dev/null || true
 
 # ── 챗봇 파이프라인 실행에 필요한 지원 패키지 동봉 ───────────────────
 #   src/*.py 가 import 하는 내부 모듈들. 이게 없으면 chatbot.sh 가 실행 불가.
@@ -104,19 +103,21 @@ if [ "${INCLUDE_MODEL:-0}" = "1" ] && [ -f "$MODEL_BIN" ]; then
     copy_one "$ROOT/model/$mf" "$STAGE/model/$mf"
   done
 else
-  # placeholder: 용량 큰 가중치는 드라이브 링크로 대체(restore_assets.sh 로 복원)
+  # placeholder: 가중치를 빼도 실행에는 지장이 없다. 두 진입점이 없으면 그 자리에서 학습한다.
   cat > "$STAGE/model/DOWNLOAD_MODEL.txt" <<'PLACEHOLDER'
 === 분류기 가중치(model.safetensors)는 용량이 커서 zip 에서 제외했습니다 ===
 
-복원 방법 (둘 중 하나):
-  1) restore_assets.sh 의 MODEL_ID 를 드라이브 파일ID로 채운 뒤:  bash restore_assets.sh
-  2) 수동: model.tar.gz 를 드라이브에서 받아 압축해제 → model/ 에 safetensors+config+tokenizer 배치
+별도 복원 작업은 필요 없습니다.
+src/classifier.ipynb 또는 chatbot.sh 를 실행하면 가중치가 없는 것을 감지해
+data/cls/ 학습 데이터로 분류기를 그 자리에서 학습한 뒤 model/ 에 저장합니다.
+(klue/roberta-base 파인튜닝, GPU 기준 수 분)
 
-드라이브 링크(채워넣기): <model.tar.gz 공유 링크>
+수동으로 먼저 만들어 두려면:
+    python scripts/train_classifier.py
 
-(zip 에 실제 가중치까지 동봉하려면:  INCLUDE_MODEL=1 bash scripts/package_submission.sh)
+(zip 에 학습된 가중치까지 동봉하려면:  INCLUDE_MODEL=1 bash scripts/package_submission.sh)
 PLACEHOLDER
-  echo "[package] model.bin → placeholder(다운로드 링크 안내) 생성"
+  echo "[package] 가중치 미동봉 → 실행 시 자동 학습 안내문 생성"
   # placeholder 모드에서도 토크나이저/설정은 가벼우니 동봉(분류기 로드용)
   for mf in config.json label_map.json special_tokens_map.json \
             tokenizer.json tokenizer_config.json vocab.txt; do
@@ -134,7 +135,7 @@ if [ "${INCLUDE_CHROMA:-1}" = "1" ] && [ -d "$ROOT/chroma_db" ]; then
          cp -f "$rel" "$STAGE/$rel"
        done)
 else
-  echo "[package] chroma_db/ 미동봉 → 드라이브 복원 의존(restore_assets.sh)"
+  echo "[package] chroma_db/ 미동봉 → 첫 검색 때 data/crawled 로 자동 재생성(수 분 소요)"
 fi
 
 # ── outputs/ : 평가 시 생성됨. 빈 폴더라도 존재해야 함 ──────────────

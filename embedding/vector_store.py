@@ -50,8 +50,41 @@ def count() -> int:
     return _get_collection().count()
 
 
+_index_checked = False
+
+
+def ensure_index() -> bool:
+    """인덱스가 비어 있으면 data/crawled 에서 재생성한다.
+
+    chroma_db/ 는 용량 때문에 .gitignore 로 제외돼 있다. clone 직후에는 인덱스가 없는데,
+    get_or_create_collection 은 빈 컬렉션을 조용히 만들어버려서 검색이 0건을 돌려주고도
+    에러가 나지 않는다. 그러면 RAG 답변이 이유 없이 부실해진다 — 크래시보다 찾기 어렵다.
+    그래서 첫 검색 전에 비어 있는지 확인하고, 비었으면 커밋된 크롤링 원본으로 다시 만든다.
+
+    반환값: 재생성을 했으면 True, 이미 있으면 False.
+    """
+    global _index_checked
+    if _index_checked:
+        return False
+    _index_checked = True
+    if count() > 0:
+        return False
+
+    print("[vector_store] chroma_db 인덱스가 비어 있습니다 → data/crawled 로 재생성합니다.")
+    print("[vector_store] bge-m3 임베딩이라 수 분 걸립니다. 한 번만 만들면 이후에는 재사용됩니다.")
+    from embedding.chunker import chunk_documents
+    from embedding.data_loader import load_scoped_docs
+
+    docs = load_scoped_docs()
+    chunks = chunk_documents(docs)
+    print("[vector_store] 문서 %d건 → 청크 %d개" % (len(docs), len(chunks)))
+    build_vector_db(chunks)
+    return True
+
+
 def get_all_docs(batch_size: int = 1000) -> list[dict]:
     """BM25 인덱스 구축용 전체 문서 반환."""
+    ensure_index()
     collection = _get_collection()
     total = collection.count()
     if total == 0:
@@ -72,6 +105,7 @@ def get_all_docs(batch_size: int = 1000) -> list[dict]:
 
 def query(text: str, n_results: int = 10, where: dict | None = None) -> list[dict]:
     from embedding.embedder import encode
+    ensure_index()
     collection = _get_collection()
     embedding = encode([text])[0].tolist()
     kwargs: dict = {"query_embeddings": [embedding], "n_results": n_results, "include": ["documents", "metadatas", "distances"]}

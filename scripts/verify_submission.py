@@ -92,10 +92,16 @@ def verify(root: str) -> bool:
     if has_weight and has_cfg:
         print(f"  {OK} 실제 가중치 동봉(model.safetensors/bin + config)")
     elif has_placeholder:
-        print(f"  {WARN} 가중치는 드라이브 링크(placeholder). 채점 전 restore_assets.sh 로 복원 필요")
+        print(f"  {WARN} 가중치 미동봉 — 실행 시 data/cls 로 자동 학습됨(안내문 존재)")
     else:
-        print(f"  {NO} model/ 가중치도 placeholder도 없음")
-        problems.append("model/ 가중치/placeholder 모두 없음 (분류기 로드 불가)")
+        # 가중치가 없어도 실행은 된다. classifier.ipynb / chatbot.sh 가 없으면 학습한다.
+        # 다만 학습 데이터까지 없으면 그 자리에서 만들 수도 없으므로 그때만 실패로 본다.
+        has_trainset = _exists(root, "data/cls/train.json") or _exists(root, "scripts/build_cls_dataset.py")
+        if has_trainset:
+            print(f"  {WARN} 가중치 없음 — 실행 시 자동 학습 예정(data/cls 또는 생성 스크립트 확인됨)")
+        else:
+            print(f"  {NO} 가중치도 학습 데이터도 없음")
+            problems.append("model/ 가중치도 data/cls 학습 데이터도 없음 (분류기 생성 불가)")
 
     print("\n[4] outputs/ 출력 양식")
     checks = [

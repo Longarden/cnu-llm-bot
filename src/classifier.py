@@ -1,93 +1,76 @@
-"""질문유형 분류기(Task1) 추론 — model/ 로드 → data/test_cls.json 예측 → outputs/cls_output.json.
+"""질문유형 분류기(Task1) CLI — src/classifier.ipynb 과 같은 일을 터미널에서 한다.
 
-입력 : data/test_cls.json   (포맷 [{"question":"..."}, ...])
-출력 : outputs/cls_output.json (포맷 [{"question":"...","label":N}, ...], label은 0~4 정수)
-모델 : model/  (scripts/train_classifier.py 로 학습한 분류기)
+흐름: 학습 데이터 확인 → (가중치 없으면) 학습 → data/test_cls.json 예측 → outputs/cls_output.json
 
-test_cls.json 이 없으면 data/cls/valid.json 의 question 만 떼서 임시 생성(스모크).
-환경: Python 3.10 / torch 2.5.1. GPU 있으면 GPU, 없으면 CPU 자동.
+입력 : data/test_cls.json      (포맷 [{"question": "..."}, ...])
+출력 : outputs/cls_output.json (포맷 [{"id": N, "question": "...", "label": 0~4}, ...])
 
-실행: python src/classifier.py
+학습 로직은 src/train_cls.py 에 있다. 노트북과 이 CLI 가 같은 코드를 쓰므로 결과가 갈리지 않는다.
+test_cls.json 이 없으면 data/cls/valid.json 의 question 만 떼서 임시 생성한다(스모크).
+
+실행:
+    python src/classifier.py
+    python src/classifier.py --force    # 분류기를 새로 학습한 뒤 예측
 """
-import sys, json
+import collections
+import json
+import sys
 from pathlib import Path
 
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
-# 노트북(.ipynb)에서는 __file__ 이 없으므로 cwd 기반으로도 ROOT 를 잡는다.
 try:
-    ROOT = Path(__file__).resolve().parent.parent
-except NameError:
-    ROOT = Path.cwd()
-    if (ROOT / 'src').exists() is False and (ROOT.parent / 'model').exists():
-        ROOT = ROOT.parent
-try:
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
 
-MODEL_DIR = ROOT / 'model'
-TEST_PATH = ROOT / 'data' / 'test_cls.json'
-OUT_DIR = ROOT / 'outputs'
-OUT_PATH = OUT_DIR / 'cls_output.json'
-VALID_PATH = ROOT / 'data' / 'cls' / 'valid.json'
-MAX_LEN = 64
-BATCH = 32
+from src.train_cls import (  # noqa: E402
+    LABEL_NAMES, load_rows, predict_labels, train_classifier,
+)
 
-
-def ensure_test_file():
-    """test_cls.json 이 없으면 valid.json 의 question 만 떼서 임시 생성."""
-    if TEST_PATH.exists():
-        return
-    if not VALID_PATH.exists():
-        raise FileNotFoundError(f'{TEST_PATH} 도 {VALID_PATH} 도 없습니다.')
-    with open(VALID_PATH, encoding='utf-8') as f:
-        rows = json.load(f)
-    test_rows = [{'question': r['question']} for r in rows]
-    TEST_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(TEST_PATH, 'w', encoding='utf-8') as f:
-        json.dump(test_rows, f, ensure_ascii=False, indent=2)
-    print(f'[init] test_cls.json 이 없어 valid 에서 임시 생성: {TEST_PATH} (n={len(test_rows)})')
+CLS_DIR = ROOT / "data" / "cls"
+TEST_PATH = ROOT / "data" / "test_cls.json"
+OUT_PATH = ROOT / "outputs" / "cls_output.json"
 
 
 def main():
-    ensure_test_file()
+    force = "--force" in sys.argv
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f'[env] device={device}  model_dir={MODEL_DIR}')
+    # 1) 가중치가 없으면 학습해서 만든다(force 면 항상 새로 학습).
+    train_classifier(force=force)
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
-    model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
-    model.to(device)
-    model.eval()
+    import torch
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-    with open(TEST_PATH, encoding='utf-8') as f:
-        test_rows = json.load(f)
-    questions = [r['question'] for r in test_rows]
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    tokenizer = AutoTokenizer.from_pretrained(str(ROOT / "model"))
+    model = AutoModelForSequenceClassification.from_pretrained(str(ROOT / "model"))
+    model.to(device).eval()
 
-    preds = []
-    with torch.no_grad():
-        for i in range(0, len(questions), BATCH):
-            batch = questions[i:i + BATCH]
-            enc = tokenizer(
-                batch, truncation=True, max_length=MAX_LEN,
-                padding=True, return_tensors='pt',
-            ).to(device)
-            logits = model(**enc).logits
-            preds.extend(logits.argmax(dim=-1).cpu().tolist())
+    # 2) 테스트 입력 확보
+    if not TEST_PATH.exists():
+        TEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(TEST_PATH, "w", encoding="utf-8") as f:
+            json.dump([{"question": r["question"]} for r in load_rows(CLS_DIR / "valid.json")],
+                      f, ensure_ascii=False, indent=2)
+        print("test_cls.json 이 없어 valid 로 임시 생성했습니다:", TEST_PATH)
 
-    # 공식 템플릿 양식: id, question, label. id 는 입력행의 id 있으면 사용, 없으면 인덱스.
-    out = [{'id': test_rows[i].get('id', i), 'question': q, 'label': int(p)}
+    test_rows = load_rows(TEST_PATH)
+    questions = [r["question"] for r in test_rows]
+
+    # 3) 예측 → 제출 양식으로 저장
+    preds = predict_labels(model, tokenizer, questions, device)
+    out = [{"id": test_rows[i].get("id", i), "question": q, "label": int(p)}
            for i, (q, p) in enumerate(zip(questions, preds))]
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    with open(OUT_PATH, 'w', encoding='utf-8') as f:
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
 
-    print(f'[done] {len(out)}건 예측 → {OUT_PATH}')
-    for row in out[:3]:
-        print('   ', json.dumps(row, ensure_ascii=False))
+    print("%d건 예측 → %s" % (len(out), OUT_PATH))
+    print("예측 분포:", {LABEL_NAMES[k]: v for k, v in sorted(collections.Counter(preds).items())})
+    return 0
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    raise SystemExit(main())

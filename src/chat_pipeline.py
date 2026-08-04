@@ -65,12 +65,21 @@ _classifier = None
 
 
 def load_classifier():
-    """분류기(tokenizer, model) 싱글턴 로드. model/ 에서 로컬 로드."""
+    """분류기(tokenizer, model) 싱글턴 로드. model/ 에서 로컬 로드.
+
+    가중치(model/*.safetensors)는 용량 때문에 .gitignore 로 제외돼 있어 clone 직후에는 없다.
+    그 상태에서 from_pretrained 를 부르면 OSError 로 죽으므로, 없으면 여기서 학습해서 만든다.
+    (classifier.ipynb 를 먼저 돌렸다면 이미 있으므로 그대로 재사용한다.)
+    """
     global _classifier
     if _classifier is not None:
         return _classifier
     import torch
     from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+    from src.train_cls import ensure_classifier
+
+    ensure_classifier()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = AutoTokenizer.from_pretrained(str(MODEL_DIR))
