@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # 콜랩에서 조교처럼 풀 검증. 모드 3가지.
-#   bash verify.sh           # check : 구조/양식만(빠름, 모델 불필요)
-#   bash verify.sh stub      # stub  : EXAONE 없이 파이프라인+출력양식 검증(검색까지만)
-#   bash verify.sh full      # full  : 설치+자산복원+분류기+챗/실시간 출력 실제 생성(EXAONE 로딩)
+#   bash scripts/verify.sh           # check : 구조/양식만(빠름, 모델 불필요)
+#   bash scripts/verify.sh stub      # stub  : EXAONE 없이 파이프라인+출력양식 검증(검색까지만)
+#   bash scripts/verify.sh full      # full  : 설치+자산복원+분류기+챗/실시간 출력 실제 생성(EXAONE 로딩)
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 MODE="${1:-check}"
 
 run() { echo; echo "▶ $*"; "$@" || echo "  [warn] 위 단계 실패(계속 진행)"; }
