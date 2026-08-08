@@ -34,26 +34,6 @@
   → 답변
 ```
 
-## 디렉터리
-
-```
-src/          classifier.ipynb(채점 진입점) · classifier.py · chat_pipeline.py(코어)
-              gen_chat_output.py · realtime_model.py · chatbot_ui.py · run_all.py
-data/         cls/(분류기 학습셋) · crawled/(크롤링 원본) · test_*.json(평가 입력)
-model/        분류기 가중치와 토크나이저 (가중치는 드라이브 복원, 아래 참고)
-retrieval/    하이브리드 검색 · 리랭커 · 카테고리 라우팅 · 날짜 추출
-embedding/    bge-m3 임베더 · Chroma 벡터스토어 · 청커 · 데이터 로더
-generation/   프롬프트 · EXAONE 로컬 생성 · CRAG 거절 게이트
-crawlers/     사이트별 크롤러 15종
-crawler_pipeline/  본문 추출 · 텍스트 보정 · 중복 제거 · 요약
-interface/    RAG 답변 조립
-scripts/      학습 · 인덱스 빌드 · 평가 · 검증 · 패키징 스크립트
-notebooks/    콜랩 실행 노트북
-docs/         콜랩 실행 런북 · 평가 기록
-tests/        단위 테스트
-eval/         평가 · LLM judge · 테스트셋 빌더
-```
-
 핵심 소스(`src/`):
 - `classifier.ipynb` / `classifier.py` — 분류기 추론, `test_cls.json` → `cls_output.json`
 - `chat_pipeline.py` — 챗봇 코어(분류 → 라우팅 → RAG → 생성)
@@ -132,14 +112,6 @@ bash restore_assets.sh        # 드라이브에서 model/ + chroma_db/ 받아 �
 ```
 
 그 뒤 `src/classifier.ipynb` 와 `chatbot.sh` 를 실행하면 됩니다. (model/ 은 분류기, chroma_db/ 는 챗봇 검색에 필요)
-
-## 제출 전 자체 검증
-
-```bash
-bash scripts/verify.sh              # 구조·양식만 (빠름, 모델 불필요)
-bash scripts/verify.sh stub         # EXAONE 없이 파이프라인까지
-bash scripts/verify.sh full         # 자산 복원 + 실제 출력 생성까지
-```
 
 ## 제출물 패키징
 
